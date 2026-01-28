@@ -33,7 +33,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 
             Vector3 playerPos = Player.main.transform.position;
 
-            string biome = LargeWorld.main.GetBiome(playerPos);
+            string biome = LargeWorld.main?.GetBiome(playerPos) ?? "UnknownBiome";
 
             Plugin.Log.LogInfo( $"[RSM_PlayerPositionTracker] Player : X:{playerPos.x:F1} Y:{playerPos.y:F1} Z:{playerPos.z:F1} | Biome:{biome}");
         }

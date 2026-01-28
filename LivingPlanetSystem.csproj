@@ -70,6 +70,7 @@
   <ItemGroup>
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RandomSpawnerModule\RSM_BiomeRegistry.cs" />
     <Compile Include="RandomSpawnerModule\RSM_PlayerPositionTracker.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

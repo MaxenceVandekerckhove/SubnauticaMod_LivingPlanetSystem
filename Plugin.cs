@@ -35,6 +35,8 @@ namespace LivingPlanetSystem
                 DontDestroyOnLoad(runner);
 
                 runner.AddComponent<RSM_PlayerPositionTracker>();
+
+                RSM_BiomeRegistry.RegisterAllBiomes();
             }
         }
     }
