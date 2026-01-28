@@ -9,34 +9,39 @@ namespace LivingPlanetSystem
     [BepInPlugin(MyGuid, PluginName, Version)]
     public class Plugin : BaseUnityPlugin
     {
-        // Mod details
         private const string MyGuid = "com.CaporalCross.LivingPlanetSystem";
         private const string PluginName = "LivingPlanetSystem";
         private const string Version = "1.0.0";
 
-        // Logger instance
-        public static ManualLogSource Log = new ManualLogSource(PluginName);
+        public static ManualLogSource Log = null;
 
         private void Awake()
         {
-            Logger.LogInfo($"{PluginName} v{Version} is loaded!");
             Log = Logger;
+            Logger.LogInfo($"{PluginName} v{Version} is loaded!");
 
-            // Every time a scene is loaded, call OnSceneLoaded method
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
+
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            // Aurora => Player started a World
             if (scene.name == "Aurora")
             {
-                // Create persistent runner object
                 GameObject runner = new GameObject("RSM_CoreRunner");
                 DontDestroyOnLoad(runner);
 
                 runner.AddComponent<RSM_PlayerPositionTracker>();
 
                 RSM_BiomeRegistry.RegisterAllBiomes();
+
+                // Détecte les créatures et log la fin du scan
+                RSM_CreatureRegistry.OnCreaturesLoaded += () =>
+                {
+                    Plugin.Log.LogInfo("[Plugin] RSM_CreatureRegistry finished scanning creatures.");
+                };
+
+                // Lancer la détection des créatures
+                RSM_CreatureRegistry.Initialize();
             }
         }
     }
