@@ -1,5 +1,8 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
+using LivingPlanetSystem.RandomSpawnerModule;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace LivingPlanetSystem
 {
@@ -18,6 +21,21 @@ namespace LivingPlanetSystem
         {
             Logger.LogInfo($"{PluginName} v{Version} is loaded!");
             Log = Logger;
+
+            // Every time a scene is loaded, call OnSceneLoaded method
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            // Aurora => Player started a World
+            if (scene.name == "Aurora")
+            {
+                // Create persistent runner object
+                GameObject runner = new GameObject("RSM_CoreRunner");
+                DontDestroyOnLoad(runner);
+
+                runner.AddComponent<RSM_PlayerPositionTracker>();
+            }
         }
     }
 }
