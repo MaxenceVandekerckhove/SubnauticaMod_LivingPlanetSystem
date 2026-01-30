@@ -8,33 +8,41 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 {
     public static class RSM_CreatureRegistry
     {
-        // Liste interne des créatures détectées
+        // Internal list of detected creatures
         private static readonly List<TechType> allCreatures = new List<TechType>();
 
-        // Event déclenché quand le scan est terminé
+        // Event triggered when the scan is complete
         public static event Action OnCreaturesLoaded;
 
-        /// <summary>
-        /// Initialise le scan des créatures.
-        /// </summary>
+        private static bool isScanning = false;
+        private static bool cancelScan = false;
+
+        /// Initializes the creature scan.
         public static void Initialize()
         {
+            if (isScanning)
+            {
+                Plugin.Log.LogWarning("[RSM_CreatureRegistry] Scan already running. Skipping.");
+                return;
+            }
+
+            isScanning = true;
             allCreatures.Clear();
-            Plugin.Log.LogInfo($"[RSM_CreatureRegistry] Cleaning creature list | Count = {allCreatures.Count}");
-            Plugin.Log.LogInfo($"[RSM_CreatureRegistry] Starting creature scan...");
+            cancelScan = false;
 
             CoroutineHost.StartCoroutine(ScanAllCreatures());
         }
 
-        /// <summary>
-        /// Scan asynchrone de toutes les créatures
-        /// </summary>
+        /// Asynchronous scan of all creatures
         private static IEnumerator ScanAllCreatures()
         {
             int pendingTasks = 0;
 
             foreach (TechType techType in Enum.GetValues(typeof(TechType)))
             {
+                if (cancelScan)
+                    yield break;
+
                 if (techType == TechType.None)
                     continue;
 
@@ -59,11 +67,11 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                 }));
             }
 
-            // Attendre que toutes les tâches se terminent
+            // Wait until all tasks are finished.
             while (pendingTasks > 0)
                 yield return null;
 
-            // Log final listant toutes les créatures détectées
+            // Final log of all creatures detected
             Plugin.Log.LogInfo($"[RSM_CreatureRegistry] End of creature scan | Creature count : {allCreatures.Count}");
             if (allCreatures.Count > 0)
             {
@@ -72,11 +80,10 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             }
 
             OnCreaturesLoaded?.Invoke();
+            isScanning = false;
         }
 
-        /// <summary>
-        /// Vérifie si le TechType est une créature avec timeout
-        /// </summary>
+        /// Checks if the TechType is a creature with a timeout
         private static IEnumerator IsCreatureWithTimeout(TechType techType, float timeout, Action<bool> callback)
         {
             bool completed = false;
@@ -92,18 +99,20 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 
             float startTime = Time.time;
             while (!completed && Time.time - startTime < timeout)
+            {
+                if (cancelScan)
+                    yield break;
+
                 yield return null;
+            }
 
             if (!completed)
             {
-                Plugin.Log.LogWarning($"[RSM_CreatureRegistry] Timeout for {techType}. Ignored.");
                 callback?.Invoke(false);
             }
         }
 
-        /// <summary>
-        /// Charge le prefab et vérifie si c'est une créature
-        /// </summary>
+        /// Load the prefab and check if it's a creature
         private static IEnumerator IsCreature(TechType techType, Action<bool> callback)
         {
             var task = CraftData.GetPrefabForTechTypeAsync(techType, verbose: false);
@@ -114,12 +123,22 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             callback?.Invoke(isCreature);
         }
 
-        /// <summary>
-        /// Retourne une copie de toutes les créatures détectées
-        /// </summary>
+        /// Returns a copy of all detected creatures
         public static List<TechType> GetAllCreatures()
         {
             return new List<TechType>(allCreatures);
+        }
+
+        // Clear allCreatures list
+        public static void Clear()
+        {
+            Plugin.Log.LogInfo("[RSM_CreatureRegistry] Clearing creature registry.");
+
+            isScanning = false;
+            OnCreaturesLoaded = null;
+            cancelScan = true;
+
+            allCreatures.Clear();
         }
     }
 }

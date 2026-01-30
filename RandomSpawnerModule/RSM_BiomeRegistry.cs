@@ -68,5 +68,12 @@ namespace LivingPlanetSystem.RandomSpawnerModule
         {
             return biomes;
         }
+
+        // Clear biomes list
+        public static void Clear()
+        {
+            Plugin.Log.LogInfo("[RSM_BiomeRegistry] Clearing biome registry.");
+            biomes.Clear();
+        }
     }
 }

@@ -15,6 +15,10 @@ namespace LivingPlanetSystem
 
         public static ManualLogSource Log = null;
 
+        public GameObject runner;
+        private static bool systemsInitialized = false;
+        private static bool eventsHooked = false;
+
         private void Awake()
         {
             Log = Logger;
@@ -27,22 +31,60 @@ namespace LivingPlanetSystem
         {
             if (scene.name == "Aurora")
             {
-                GameObject runner = new GameObject("RSM_CoreRunner");
-                DontDestroyOnLoad(runner);
+                if (systemsInitialized)
+                {
+                    Log.LogInfo("[Plugin] Systems already initialized : skipping.");
+                    return;
+                }
 
+                systemsInitialized = true;
+
+                runner = new GameObject("RSM_CoreRunner");
+                DontDestroyOnLoad(runner);
                 runner.AddComponent<RSM_PlayerPositionTracker>();
 
                 RSM_BiomeRegistry.RegisterAllBiomes();
 
-                // Détecte les créatures et log la fin du scan
-                RSM_CreatureRegistry.OnCreaturesLoaded += () =>
+                if (!eventsHooked)
                 {
-                    Plugin.Log.LogInfo("[Plugin] RSM_CreatureRegistry finished scanning creatures.");
-                };
+                    RSM_CreatureRegistry.OnCreaturesLoaded += OnCreaturesLoaded;
+                    eventsHooked = true;
+                }
 
-                // Lancer la détection des créatures
                 RSM_CreatureRegistry.Initialize();
+                RSM_CreatureFilter.Initialize();
+
+                if (scene.name == "Cleaner")
+                {
+
+                    Log.LogInfo("[Plugin] Cleaner scene detected : shutting down systems.");
+
+                    systemsInitialized = false;
+
+                    if (runner != null)
+                    {
+                        Destroy(runner);
+                        runner = null;
+                    }
+
+                    // Clear registries
+                    RSM_BiomeRegistry.Clear();
+                    RSM_CreatureRegistry.Clear();
+                    RSM_CreatureFilter.Clear();
+
+                    // Unhook events
+                    if (eventsHooked)
+                    {
+                        RSM_CreatureRegistry.OnCreaturesLoaded -= OnCreaturesLoaded;
+                        eventsHooked = false;
+                    }
+                }
             }
+        }
+
+        private void OnCreaturesLoaded()
+        {
+            Log.LogInfo("[Plugin] RSM_CreatureRegistry finished scanning creatures.");
         }
     }
 }
