@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
+using LivingPlanetSystem.RandomSpawnerModule;
 using UnityEngine.SceneManagement;
 
 namespace LivingPlanetSystem
@@ -55,7 +56,11 @@ namespace LivingPlanetSystem
         // Scene callbacks
         private void OnMainMenuLoaded()
         {
-            Log.LogInfo("[Plugin] Main menu detected — creature scan will start here.");
+            Plugin.Log.LogInfo("[Plugin] Main menu detected, initializing RSM systems.");
+
+            // Initialize biome registry — synchronous, no issue with timing
+            RSM_BiomeRegistry.Initialize();
+
             // TODO : trigger RSM_CreatureCache check + scan if needed
         }
 
