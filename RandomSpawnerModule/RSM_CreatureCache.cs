@@ -143,16 +143,19 @@ namespace LivingPlanetSystem.RandomSpawnerModule
         /// The fingerprint changes whenever a mod is added or removed.
         private static string BuildFingerprint()
         {
-            // Collect all plugin GUIDs from BepInEx plugin metadata
-            List<string> guids = new List<string>();
+            List<string> entries = new List<string>();
 
             foreach (var plugin in BepInEx.Bootstrap.Chainloader.PluginInfos.Values)
-                guids.Add(plugin.Metadata.GUID);
+            {
+                // Format : "com.example.modname@1.2.3"
+                string entry = $"{plugin.Metadata.GUID}@{plugin.Metadata.Version}";
+                entries.Add(entry);
+            }
 
             // Sort to ensure consistent order regardless of load order
-            guids.Sort();
+            entries.Sort();
 
-            return string.Join("|", guids);
+            return string.Join("|", entries);
         }
     }
 }
