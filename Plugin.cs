@@ -3,6 +3,7 @@ using BepInEx.Logging;
 using LivingPlanetSystem.RandomSpawnerModule;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
+using UWE;
 
 namespace LivingPlanetSystem
 {
@@ -89,17 +90,25 @@ namespace LivingPlanetSystem
         {
             Plugin.Log.LogInfo($"[Plugin] Creature scan completed : {rawCreatures.Count} raw creatures found.");
 
-            // Unsubscribe immediately to avoid duplicate calls
             RSM_CreatureRegistry.OnScanCompleted -= OnCreatureScanCompleted;
 
-            // Step 3 : filter the raw creature list
-            RSM_CreatureFilter.Filter(rawCreatures);
+            // Filter is now a coroutine — start it and pass a callback for when it's done
+            CoroutineHost.StartCoroutine(
+                RSM_CreatureFilter.Filter(rawCreatures, OnCreatureFilterCompleted)
+            );
+        }
 
-            // Step 4 : save the filtered list to cache
+        /// Called when RSM_CreatureFilter has finished filtering and measuring all creatures.
+        private void OnCreatureFilterCompleted()
+        {
+            Plugin.Log.LogInfo("[Plugin] Creature filtering completed.");
+
+            // Save the filtered list to cache
             RSM_CreatureCache.SaveCache(RSM_CreatureFilter.GetFilteredCreatures());
 
-            // TODO : trigger RSM_SpawnManager
             Plugin.Log.LogInfo("[Plugin] Cache saved : ready for spawn registration on next game load.");
+
+            // TODO : trigger RSM_SpawnManager
         }
     }
 }

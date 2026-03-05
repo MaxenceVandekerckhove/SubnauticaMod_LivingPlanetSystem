@@ -1,24 +1,31 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
+using UWE;
 
 namespace LivingPlanetSystem.RandomSpawnerModule
 {
     /// <summary>
     /// Responsible for filtering the raw creature list produced by RSM_CreatureRegistry.
-    /// Removes creatures that are unsuitable for random spawning based on name exclusion rules.
-    /// The size filter from the previous version has been removed — bounds on uninstantiated
-    /// prefabs are unreliable. Exclusion is handled by name keywords instead.
-    /// Filtered results are stored and passed to RSM_CreatureCache for persistence.
+    /// Removes creatures that are unsuitable for random spawning based on :
+    ///   1. Name exclusion keywords
+    ///   2. Size limits (magnitude and max axis length via collider bounds)
+    /// Size limits are logged for manual tuning before being enforced.
     /// </summary>
     public static class RSM_CreatureFilter
     {
+        // Constants
+        public const float SIZE_MAGNITUDE_LIMIT = 70f;
+        public const float SIZE_LENGTH_LIMIT = float.MaxValue;
+
         // Private state
 
         private static List<TechType> filteredCreatures = new List<TechType>();
 
         // Exclusion rules
 
-        /// Any creature whose TechType name contains one of these strings will be excluded.
+        /// Creature name keywords that disqualify a creature from random spawning.
         private static readonly string[] ExcludedKeywords =
         {
             "test",
@@ -30,19 +37,25 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             "mrteeth",
             "consciousneuralmatter",
             "meatball",
-            "gilbert"
+            "gilbert",
+            "silence"
         };
 
         // Public API
 
-        /// Filters the raw creature list and stores the result.
-        public static void Filter(List<TechType> rawCreatures)
+        /// Filters the raw creature list by name, then measures and logs the size of each remaining creature.
+        public static IEnumerator Filter(List<TechType> rawCreatures, Action onCompleted)
         {
             filteredCreatures.Clear();
 
             int totalInput = rawCreatures.Count;
-            int totalExcluded = 0;
+            int excludedByName = 0;
+            int excludedBySize = 0;
 
+            // Pass the name-excluded creatures to the size measurement step
+            List<TechType> namePassedCreatures = new List<TechType>();
+
+            // Step 1 : name exclusion
             foreach (TechType techType in rawCreatures)
             {
                 string name = techType.ToString().ToLower();
@@ -50,18 +63,74 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                 if (IsNameExcluded(name))
                 {
                     Plugin.Log.LogDebug($"[RSM_CreatureFilter] {techType} excluded by name rule.");
-                    totalExcluded++;
+                    excludedByName++;
+                    continue;
+                }
+
+                namePassedCreatures.Add(techType);
+            }
+
+            Plugin.Log.LogInfo($"[RSM_CreatureFilter] Name filter done : " +
+                               $"{namePassedCreatures.Count} remaining after {excludedByName} name exclusions.");
+
+            // ── Step 2 : size measurement and filter ──────────────────────────────
+            Plugin.Log.LogInfo("[RSM_CreatureFilter] Starting size measurement...");
+
+            foreach (TechType techType in namePassedCreatures)
+            {
+                var task = CraftData.GetPrefabForTechTypeAsync(techType, verbose: false);
+                yield return task;
+
+                GameObject prefab = task.GetResult();
+
+                if (prefab == null)
+                {
+                    Plugin.Log.LogWarning($"[RSM_CreatureFilter] Could not load prefab for {techType} : keeping by default.");
+                    filteredCreatures.Add(techType);
+                    continue;
+                }
+
+                // Instantiate and activate so colliders are properly initialized
+                GameObject instance = UnityEngine.Object.Instantiate(prefab);
+                instance.SetActive(true);
+
+                // Wait one frame for physics/colliders to initialize
+                yield return null;
+
+                // Measure size using all colliders combined
+                Vector3 size = GetColliderSize(instance, techType);
+
+                // Destroy the temporary instance immediately after measuring
+                UnityEngine.Object.Destroy(instance);
+
+                float magnitude = size.magnitude;
+                float maxAxis = Mathf.Max(size.x, size.y, size.z);
+
+                // Apply size filter if limits are set
+                bool tooLarge = magnitude > SIZE_MAGNITUDE_LIMIT;
+                bool tooLong = maxAxis > SIZE_LENGTH_LIMIT;
+
+                if (tooLarge || tooLong)
+                {
+                    Plugin.Log.LogDebug($"[RSM_CreatureFilter] {techType} excluded by size rule " +
+                                        $"(magnitude={magnitude:F2}, maxAxis={maxAxis:F2}).");
+                    excludedBySize++;
                     continue;
                 }
 
                 filteredCreatures.Add(techType);
             }
 
+            // Final summary
             Plugin.Log.LogInfo($"[RSM_CreatureFilter] Filtering complete : " +
                                $"{filteredCreatures.Count} creatures kept, " +
-                               $"{totalExcluded} excluded out of {totalInput} total.");
+                               $"{excludedByName} excluded by name, " +
+                               $"{excludedBySize} excluded by size, " +
+                               $"out of {totalInput} total.");
 
             Plugin.Log.LogInfo($"[RSM_CreatureFilter] Final list : {string.Join(", ", filteredCreatures)}");
+
+            onCompleted?.Invoke();
         }
 
         /// Returns a copy of the filtered creature list.
@@ -91,6 +160,25 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                     return true;
             }
             return false;
+        }
+
+        /// Computes the combined bounds of all colliders on a creature instance.
+        private static Vector3 GetColliderSize(GameObject instance, TechType techType)
+        {
+            Collider[] colliders = instance.GetComponentsInChildren<Collider>(includeInactive: true);
+
+            if (colliders.Length == 0)
+            {
+                Plugin.Log.LogWarning($"[RSM_CreatureFilter] No colliders found on {techType} : size reported as zero.");
+                return Vector3.zero;
+            }
+
+            // Start with the first collider's bounds, then encapsulate the rest
+            Bounds combined = colliders[0].bounds;
+            for (int i = 1; i < colliders.Length; i++)
+                combined.Encapsulate(colliders[i].bounds);
+
+            return combined.size;
         }
     }
 }
