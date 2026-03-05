@@ -53,7 +53,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
         {
             if (registeredBiomes.Count > 0)
             {
-                Plugin.Log.LogWarning("[RSM_BiomeRegistry] Already initialized — skipping.");
+                Plugin.Log.LogWarning("[RSM_BiomeRegistry] Already initialized : skipping.");
                 return;
             }
 

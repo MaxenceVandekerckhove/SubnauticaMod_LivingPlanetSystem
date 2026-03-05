@@ -39,7 +39,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
         {
             if (!File.Exists(CacheFilePath))
             {
-                Plugin.Log.LogInfo("[RSM_CreatureCache] No cache file found — cache is invalid.");
+                Plugin.Log.LogInfo("[RSM_CreatureCache] No cache file found : cache is invalid.");
                 return false;
             }
 
@@ -50,13 +50,13 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 
                 if (data.ModsFingerprint != currentFingerprint)
                 {
-                    Plugin.Log.LogInfo("[RSM_CreatureCache] Fingerprint mismatch — cache is invalid.");
+                    Plugin.Log.LogInfo("[RSM_CreatureCache] Fingerprint mismatch : cache is invalid.");
                     Plugin.Log.LogInfo($"[RSM_CreatureCache] Saved    : {data.ModsFingerprint}");
                     Plugin.Log.LogInfo($"[RSM_CreatureCache] Current  : {currentFingerprint}");
                     return false;
                 }
 
-                Plugin.Log.LogInfo($"[RSM_CreatureCache] Cache is valid — {data.Creatures.Count} creatures loaded.");
+                Plugin.Log.LogInfo($"[RSM_CreatureCache] Cache is valid : {data.Creatures.Count} creatures loaded.");
                 return true;
             }
             catch (Exception e)
@@ -85,7 +85,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                 string json = JsonConvert.SerializeObject(data, Newtonsoft.Json.Formatting.Indented);
                 File.WriteAllText(CacheFilePath, json);
 
-                Plugin.Log.LogInfo($"[RSM_CreatureCache] Cache saved — {creatures.Count} creatures, fingerprint : {data.ModsFingerprint}");
+                Plugin.Log.LogInfo($"[RSM_CreatureCache] Cache saved : {creatures.Count} creatures, fingerprint : {data.ModsFingerprint}");
             }
             catch (Exception e)
             {
@@ -116,11 +116,11 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                     else
                     {
                         // This can happen if a mod that added a creature is removed
-                        Plugin.Log.LogWarning($"[RSM_CreatureCache] Could not parse TechType : '{name}' — skipping.");
+                        Plugin.Log.LogWarning($"[RSM_CreatureCache] Could not parse TechType : '{name}' : skipping.");
                     }
                 }
 
-                Plugin.Log.LogInfo($"[RSM_CreatureCache] Cache loaded — {result.Count} creatures.");
+                Plugin.Log.LogInfo($"[RSM_CreatureCache] Cache loaded : {result.Count} creatures.");
             }
             catch (Exception e)
             {

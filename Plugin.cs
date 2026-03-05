@@ -92,7 +92,14 @@ namespace LivingPlanetSystem
             // Unsubscribe immediately to avoid duplicate calls
             RSM_CreatureRegistry.OnScanCompleted -= OnCreatureScanCompleted;
 
-            // TODO : pass to RSM_CreatureFilter
+            // Step 3 : filter the raw creature list
+            RSM_CreatureFilter.Filter(rawCreatures);
+
+            // Step 4 : save the filtered list to cache
+            RSM_CreatureCache.SaveCache(RSM_CreatureFilter.GetFilteredCreatures());
+
+            // TODO : trigger RSM_SpawnManager
+            Plugin.Log.LogInfo("[Plugin] Cache saved : ready for spawn registration on next game load.");
         }
     }
 }
