@@ -25,6 +25,9 @@ namespace LivingPlanetSystem
             Log = Logger;
             Log.LogInfo($"{PluginName} v{Version} loaded.");
 
+            // Initialize global configuration first — all modules depend on it
+            LPS_Config.Initialize(Config);
+
             // Subscribe to scene changes to detect menu and game scenes
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
