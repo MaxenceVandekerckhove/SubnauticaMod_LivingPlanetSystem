@@ -72,6 +72,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\LPS_SeedManager.cs" />
+    <Compile Include="Core\LPS_WorldState.cs" />
     <Compile Include="LPS_Config.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

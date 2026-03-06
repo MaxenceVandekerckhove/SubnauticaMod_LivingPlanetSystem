@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
+using LivingPlanetSystem.Core;
 using LivingPlanetSystem.RandomSpawnerModule;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
@@ -27,6 +28,10 @@ namespace LivingPlanetSystem
 
             // Initialize global configuration first — all modules depend on it
             LPS_Config.Initialize(Config);
+
+            // Initialize core systems
+            LPS_SeedManager.Initialize();
+            LPS_WorldState.Initialize();
 
             // Subscribe to scene changes to detect menu and game scenes
             SceneManager.sceneLoaded += OnSceneLoaded;
