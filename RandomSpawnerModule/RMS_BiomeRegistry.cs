@@ -78,9 +78,6 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                                $"{registeredBiomes.Count} biomes registered, " +
                                $"{totalExcluded} excluded out of {totalScanned} total.");
 
-            // Log all registered biomes for BiomeClassifier filter definition
-            foreach (BiomeType biome in registeredBiomes)
-                Plugin.Log.LogInfo($"[RSM_BiomeRegistry] BIOME | {biome}");
         }
 
         /// Returns a copy of all registered valid biomes.

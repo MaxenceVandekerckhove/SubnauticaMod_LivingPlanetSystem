@@ -78,6 +78,7 @@
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RandomSpawnerModule\RMS_BiomeRegistry.cs" />
+    <Compile Include="RandomSpawnerModule\RSM_BiomeClassifier.cs" />
     <Compile Include="RandomSpawnerModule\RSM_CreatureCache.cs" />
     <Compile Include="RandomSpawnerModule\RSM_CreatureFilter.cs" />
     <Compile Include="RandomSpawnerModule\RSM_CreatureRegistry.cs" />

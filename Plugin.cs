@@ -68,19 +68,20 @@ namespace LivingPlanetSystem
         {
             Plugin.Log.LogInfo("[Plugin] Main menu detected : initializing RSM systems.");
 
-            // Step 1 : initialize biome registry (synchronous)
+            // Step 1 : initialize biome registry
             RSM_BiomeRegistry.Initialize();
 
-            // Step 2 : check cache validity
+            // Step 2 : classify biomes for large creature restrictions
+            RSM_BiomeClassifier.Initialize();
+
+            // Step 3 : check cache validity
             if (RSM_CreatureCache.IsCacheValid())
             {
-                // Cache is valid — no need to scan
                 Plugin.Log.LogInfo("[Plugin] Creature cache is valid : skipping scan.");
                 // TODO : trigger RSM_SpawnManager directly
             }
             else
             {
-                // Cache is invalid or missing — start scan
                 Plugin.Log.LogInfo("[Plugin] Creature cache is invalid : starting scan.");
                 RSM_CreatureRegistry.OnScanCompleted += OnCreatureScanCompleted;
                 RSM_CreatureRegistry.StartScan();
