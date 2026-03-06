@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using UnityEngine;
 using UWE;
 
@@ -10,13 +11,15 @@ namespace LivingPlanetSystem.RandomSpawnerModule
     /// Responsible for filtering the raw creature list produced by RSM_CreatureRegistry.
     /// Removes creatures that are unsuitable for random spawning based on :
     ///   1. Name exclusion keywords
-    ///   2. Size limits (magnitude and max axis length via collider bounds)
-    /// Size limits are logged for manual tuning before being enforced.
+    ///   2. Size limits (average of axes via collider bounds)
+    /// The average of the 3 axes is used as the magnitude metric to normalize
+    /// elongated creatures (e.g. Crabsnake, Shocker) against rounder ones.
     /// </summary>
     public static class RSM_CreatureFilter
     {
         // Constants
-        public const float SIZE_MAGNITUDE_LIMIT = 70f;
+
+        public const float SIZE_MAGNITUDE_LIMIT = 60f;
         public const float SIZE_LENGTH_LIMIT = float.MaxValue;
 
         // Private state
@@ -39,12 +42,14 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             "consciousneuralmatter",
             "meatball",
             "gilbert",
-            "silence"
+            "silence",
+            "dragonfly",
+            "bloom"
         };
 
         // Public API
 
-        /// Filters the raw creature list by name, then measures and logs the size of each remaining creature.
+        /// Filters the raw creature list by name, then measures the size of each remaining creature via instantiated collider bounds.
         public static IEnumerator Filter(List<TechType> rawCreatures, Action onCompleted)
         {
             filteredCreatures.Clear();
@@ -53,10 +58,9 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             int excludedByName = 0;
             int excludedBySize = 0;
 
-            // Pass the name-excluded creatures to the size measurement step
+            // Step 1 : name exclusion
             List<TechType> namePassedCreatures = new List<TechType>();
 
-            // Step 1 : name exclusion
             foreach (TechType techType in rawCreatures)
             {
                 string name = techType.ToString().ToLower();
@@ -74,7 +78,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             Plugin.Log.LogInfo($"[RSM_CreatureFilter] Name filter done : " +
                                $"{namePassedCreatures.Count} remaining after {excludedByName} name exclusions.");
 
-            // ── Step 2 : size measurement and filter ──────────────────────────────
+            // Step 2 : size measurement and filter
             Plugin.Log.LogInfo("[RSM_CreatureFilter] Starting size measurement...");
 
             foreach (TechType techType in namePassedCreatures)
@@ -86,7 +90,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 
                 if (prefab == null)
                 {
-                    Plugin.Log.LogWarning($"[RSM_CreatureFilter] Could not load prefab for {techType} : keeping by default.");
+                    Plugin.Log.LogWarning($"[RSM_CreatureFilter] Could not load prefab for {techType} : keeping with magnitude 0.");
                     filteredCreatures.Add((techType, 0f));
                     continue;
                 }
@@ -100,14 +104,17 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 
                 // Measure size using all colliders combined
                 Vector3 size = GetColliderSize(instance, techType);
+                float magnitude = (size.x + size.y + size.z) / 3f;
+                float maxAxis = Mathf.Max(size.x, size.y, size.z);
 
                 // Destroy the temporary instance immediately after measuring
                 UnityEngine.Object.Destroy(instance);
 
-                float magnitude = size.magnitude;
-                float maxAxis = Mathf.Max(size.x, size.y, size.z);
+                Plugin.Log.LogDebug($"[RSM_CreatureFilter] SIZE | {techType,-30} " +
+                                    $"avg={magnitude,7:F2}  maxAxis={maxAxis,7:F2}  " +
+                                    $"(x={size.x:F2} y={size.y:F2} z={size.z:F2})");
 
-                // Apply size filter if limits are set
+                // Apply size filter
                 bool tooLarge = magnitude > SIZE_MAGNITUDE_LIMIT;
                 bool tooLong = maxAxis > SIZE_LENGTH_LIMIT;
 
@@ -135,7 +142,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             onCompleted?.Invoke();
         }
 
-        /// Returns a copy of the filtered creature list.
+        /// Returns a copy of the filtered creature list with their magnitudes.
         public static List<(TechType techType, float magnitude)> GetFilteredCreatures()
         {
             return new List<(TechType techType, float magnitude)>(filteredCreatures);
@@ -175,7 +182,6 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                 return Vector3.zero;
             }
 
-            // Start with the first collider's bounds, then encapsulate the rest
             Bounds combined = colliders[0].bounds;
             for (int i = 1; i < colliders.Length; i++)
                 combined.Encapsulate(colliders[i].bounds);

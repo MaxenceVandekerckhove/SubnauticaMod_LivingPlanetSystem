@@ -14,13 +14,16 @@ namespace LivingPlanetSystem.RandomSpawnerModule
     {
         // Private state
 
+        private static bool isInitialized = false;
+
         private static readonly List<BiomeType> unrestrictedBiomes = new List<BiomeType>();
         private static readonly List<BiomeType> restrictedBiomes = new List<BiomeType>();
 
         // Size threshold
 
         /// Creatures with a collider magnitude above this value are considered large and will be forbidden from spawning in restricted biomes.
-        public const float LargeCreatureMagnitudeThreshold = 20f;
+        public static float LargeCreatureMagnitudeThreshold => RSM_SpawnManager.MagnitudeMedium;
+
 
         // Restriction keywords
 
@@ -62,6 +65,12 @@ namespace LivingPlanetSystem.RandomSpawnerModule
         /// Classifies all registered biomes into unrestricted and restricted lists.
         public static void Initialize()
         {
+            if (isInitialized)
+            {
+                Plugin.Log.LogWarning("[RSM_BiomeClassifier] Already initialized : skipping.");
+                return;
+            }
+
             unrestrictedBiomes.Clear();
             restrictedBiomes.Clear();
 
@@ -80,20 +89,30 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             Plugin.Log.LogInfo($"[RSM_BiomeClassifier] Classification complete : " +
                                $"{unrestrictedBiomes.Count} unrestricted, " +
                                $"{restrictedBiomes.Count} restricted.");
+
+            isInitialized = true;
+
+            // Log restricted biomes
+            // Plugin.Log.LogInfo("[RSM_BiomeClassifier] Restricted biomes :");
+            // foreach (BiomeType biome in restrictedBiomes)
+            //    Plugin.Log.LogInfo($"[RSM_BiomeClassifier]   RESTRICTED   | {biome}");
+
+            // Log unrestricted biomes
+            // Plugin.Log.LogInfo("[RSM_BiomeClassifier] Unrestricted biomes :");
+            // foreach (BiomeType biome in unrestrictedBiomes)
+            //    Plugin.Log.LogInfo($"[RSM_BiomeClassifier]   UNRESTRICTED | {biome}");
         }
 
         /// Returns the appropriate biome list for a creature based on its magnitude.
-        public static List<BiomeType> GetEligibleBiomes(float magnitude)
+        public static List<BiomeType> GetEligibleBiomes(float magnitude, bool forceLarge = false)
         {
-            if (magnitude >= LargeCreatureMagnitudeThreshold)
+            bool isLarge = forceLarge || magnitude >= LargeCreatureMagnitudeThreshold;
+
+            if (isLarge)
             {
-                Plugin.Log.LogDebug($"[RSM_BiomeClassifier] Large creature (magnitude={magnitude:F2}) " +
-                                    $"— {unrestrictedBiomes.Count} eligible biomes.");
                 return new List<BiomeType>(unrestrictedBiomes);
             }
 
-            Plugin.Log.LogDebug($"[RSM_BiomeClassifier] Small creature (magnitude={magnitude:F2}) " +
-                                $"— all {RSM_BiomeRegistry.Count} biomes eligible.");
             return RSM_BiomeRegistry.GetAllBiomes();
         }
 
@@ -109,6 +128,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             Plugin.Log.LogInfo("[RSM_BiomeClassifier] Clearing biome classifier.");
             unrestrictedBiomes.Clear();
             restrictedBiomes.Clear();
+            isInitialized = false;
         }
 
         // Private helpers

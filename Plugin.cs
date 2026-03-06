@@ -78,7 +78,6 @@ namespace LivingPlanetSystem
             if (RSM_CreatureCache.IsCacheValid())
             {
                 Plugin.Log.LogInfo("[Plugin] Creature cache is valid : skipping scan.");
-                // TODO : trigger RSM_SpawnManager directly
             }
             else
             {
@@ -90,8 +89,8 @@ namespace LivingPlanetSystem
 
         private void OnGameWorldLoaded()
         {
-            Log.LogInfo("[Plugin] Game world detected : spawn registration will start here.");
-            // TODO : trigger RSM_SpawnManager
+            Plugin.Log.LogInfo("[Plugin] Game world detected : registering creature spawns.");
+            RSM_SpawnManager.RegisterSpawns();
         }
 
         /// Called when RSM_CreatureRegistry finishes scanning all TechTypes.
@@ -114,10 +113,7 @@ namespace LivingPlanetSystem
 
             // Save filtered creatures with their magnitudes to cache
             RSM_CreatureCache.SaveCache(RSM_CreatureFilter.GetFilteredCreatures());
-
-            Plugin.Log.LogInfo("[Plugin] Cache saved : ready for spawn registration on next game load.");
-
-            // TODO : trigger RSM_SpawnManager
+            Plugin.Log.LogInfo("[Plugin] Cache saved : ready for spawn registration.");
         }
     }
 }

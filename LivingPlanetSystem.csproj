@@ -82,6 +82,7 @@
     <Compile Include="RandomSpawnerModule\RSM_CreatureCache.cs" />
     <Compile Include="RandomSpawnerModule\RSM_CreatureFilter.cs" />
     <Compile Include="RandomSpawnerModule\RSM_CreatureRegistry.cs" />
+    <Compile Include="RandomSpawnerModule\RSM_SpawnManager.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

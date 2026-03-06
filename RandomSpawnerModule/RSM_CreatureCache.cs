@@ -100,7 +100,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                 string json = JsonConvert.SerializeObject(data, Formatting.Indented);
                 File.WriteAllText(CacheFilePath, json);
 
-                Plugin.Log.LogInfo($"[RSM_CreatureCache] Cache saved — {entries.Count} creatures, " +
+                Plugin.Log.LogInfo($"[RSM_CreatureCache] Cache saved : {entries.Count} creatures, " +
                                    $"fingerprint : {data.ModsFingerprint}");
             }
             catch (Exception e)
@@ -121,7 +121,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 
                 foreach (CreatureEntry entry in data.Creatures)
                 {
-                    if (Enum.TryParse(entry.TechType, out TechType techType))
+                    if (TechTypeExtensions.FromString(entry.TechType, out TechType techType, false))
                     {
                         result.Add((techType, entry.Magnitude));
                     }
