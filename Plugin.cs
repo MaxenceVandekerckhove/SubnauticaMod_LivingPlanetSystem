@@ -112,7 +112,7 @@ namespace LivingPlanetSystem
         {
             Plugin.Log.LogInfo("[Plugin] Creature filtering completed.");
 
-            // Save the filtered list to cache
+            // Save filtered creatures with their magnitudes to cache
             RSM_CreatureCache.SaveCache(RSM_CreatureFilter.GetFilteredCreatures());
 
             Plugin.Log.LogInfo("[Plugin] Cache saved : ready for spawn registration on next game load.");

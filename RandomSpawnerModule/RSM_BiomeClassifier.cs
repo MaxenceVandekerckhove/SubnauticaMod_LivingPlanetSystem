@@ -70,12 +70,10 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                 if (IsRestricted(biome))
                 {
                     restrictedBiomes.Add(biome);
-                    Plugin.Log.LogDebug($"[RSM_BiomeClassifier] RESTRICTED : {biome}");
                 }
                 else
                 {
                     unrestrictedBiomes.Add(biome);
-                    Plugin.Log.LogDebug($"[RSM_BiomeClassifier] UNRESTRICTED : {biome}");
                 }
             }
 

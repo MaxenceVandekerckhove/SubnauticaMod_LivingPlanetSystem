@@ -21,7 +21,8 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 
         // Private state
 
-        private static List<TechType> filteredCreatures = new List<TechType>();
+        private static List<(TechType techType, float magnitude)> filteredCreatures
+            = new List<(TechType techType, float magnitude)>();
 
         // Exclusion rules
 
@@ -86,7 +87,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                 if (prefab == null)
                 {
                     Plugin.Log.LogWarning($"[RSM_CreatureFilter] Could not load prefab for {techType} : keeping by default.");
-                    filteredCreatures.Add(techType);
+                    filteredCreatures.Add((techType, 0f));
                     continue;
                 }
 
@@ -118,7 +119,8 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                     continue;
                 }
 
-                filteredCreatures.Add(techType);
+                // Store creature with its measured magnitude
+                filteredCreatures.Add((techType, magnitude));
             }
 
             // Final summary
@@ -134,9 +136,9 @@ namespace LivingPlanetSystem.RandomSpawnerModule
         }
 
         /// Returns a copy of the filtered creature list.
-        public static List<TechType> GetFilteredCreatures()
+        public static List<(TechType techType, float magnitude)> GetFilteredCreatures()
         {
-            return new List<TechType>(filteredCreatures);
+            return new List<(TechType techType, float magnitude)>(filteredCreatures);
         }
 
         /// Returns the number of available creatures after filtering.
