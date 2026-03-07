@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
+using HarmonyLib;
 using LivingPlanetSystem.Core;
 using LivingPlanetSystem.RandomSpawnerModule;
 using System.Collections.Generic;
@@ -26,11 +27,14 @@ namespace LivingPlanetSystem
             Log = Logger;
             Log.LogInfo($"{PluginName} v{Version} loaded.");
 
+            // Initialize Harmony and patch
+            Harmony harmony = new Harmony(MyGuid);
+            harmony.PatchAll();
+
             // Initialize global configuration first — all modules depend on it
             LPS_Config.Initialize(Config);
 
             // Initialize core systems
-            LPS_SeedManager.Initialize();
             LPS_WorldState.Initialize();
 
             // Subscribe to scene changes to detect menu and game scenes
@@ -52,18 +56,17 @@ namespace LivingPlanetSystem
             switch (scene.name)
             {
                 case "XMenu":
-                    // Main menu is loaded
                     OnMainMenuLoaded();
                     break;
 
                 case "Aurora":
-                    // Game world is loaded
                     OnGameWorldLoaded();
                     break;
             }
         }
 
         // Scene callbacks
+
         private void OnMainMenuLoaded()
         {
             Plugin.Log.LogInfo("[Plugin] Main menu detected : initializing RSM systems.");
@@ -90,6 +93,10 @@ namespace LivingPlanetSystem
         private void OnGameWorldLoaded()
         {
             Plugin.Log.LogInfo("[Plugin] Game world detected : registering creature spawns.");
+
+            // Initialize seed for this world slot before registering spawns
+            LPS_SeedManager.InitializeForCurrentSlot();
+
             RSM_SpawnManager.RegisterSpawns();
         }
 
