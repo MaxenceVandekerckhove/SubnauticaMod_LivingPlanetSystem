@@ -161,7 +161,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                 entries.Add($"{plugin.Metadata.GUID}@{plugin.Metadata.Version}");
 
             entries.Sort();
-            return string.Join("|", entries);
+            return string.Join("|", entries) + $"|keywords:{LPS_Config.ExcludedKeywordsFingerprint}";
         }
     }
 }

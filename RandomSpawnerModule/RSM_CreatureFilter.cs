@@ -27,26 +27,6 @@ namespace LivingPlanetSystem.RandomSpawnerModule
         private static List<(TechType techType, float magnitude)> filteredCreatures
             = new List<(TechType techType, float magnitude)>();
 
-        // Exclusion rules
-
-        /// Creature name keywords that disqualify a creature from random spawning.
-        private static readonly string[] ExcludedKeywords =
-        {
-            "test",
-            "example",
-            "gargantuan",
-            "cutefish",
-            "skyray",
-            "seaemperor",
-            "mrteeth",
-            "consciousneuralmatter",
-            "meatball",
-            "gilbert",
-            "silence",
-            "dragonfly",
-            "bloom"
-        };
-
         // Public API
 
         /// Filters the raw creature list by name, then measures the size of each remaining creature via instantiated collider bounds.
@@ -79,7 +59,6 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                                $"{namePassedCreatures.Count} remaining after {excludedByName} name exclusions.");
 
             // Step 2 : size measurement and filter
-            Plugin.Log.LogInfo("[RSM_CreatureFilter] Starting size measurement...");
 
             foreach (TechType techType in namePassedCreatures)
             {
@@ -109,10 +88,6 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 
                 // Destroy the temporary instance immediately after measuring
                 UnityEngine.Object.Destroy(instance);
-
-                Plugin.Log.LogDebug($"[RSM_CreatureFilter] SIZE | {techType,-30} " +
-                                    $"avg={magnitude,7:F2}  maxAxis={maxAxis,7:F2}  " +
-                                    $"(x={size.x:F2} y={size.y:F2} z={size.z:F2})");
 
                 // Apply size filter
                 bool tooLarge = magnitude > SIZE_MAGNITUDE_LIMIT;
@@ -163,7 +138,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
         /// Returns true if the creature name contains any excluded keyword.
         private static bool IsNameExcluded(string name)
         {
-            foreach (string keyword in ExcludedKeywords)
+            foreach (string keyword in LPS_Config.ExcludedKeywords)
             {
                 if (name.Contains(keyword))
                     return true;
