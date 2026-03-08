@@ -41,7 +41,7 @@ namespace LivingPlanetSystem
             "gilbert",
             "silence",
             "dragonfly",
-            "bloom"
+            "bloom",
         };
 
         // Config entries

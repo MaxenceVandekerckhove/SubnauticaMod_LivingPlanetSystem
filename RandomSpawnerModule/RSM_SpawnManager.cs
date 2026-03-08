@@ -24,12 +24,12 @@ namespace LivingPlanetSystem.RandomSpawnerModule
     /// </summary>
     public static class RSM_SpawnManager
     {
-        // ── Size categories ───────────────────────────────────────────────────────
+        // Size categories
 
         public const float MagnitudeSmall = 1.5f;
         public const float MagnitudeMedium = 16f;
 
-        // ── Biome assignment limits ───────────────────────────────────────────────
+        // Biome assignment limits
 
         private const int BiomeCountSmallMin = 40;
         private const int BiomeCountSmallMax = 80;
@@ -38,7 +38,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
         private const int BiomeCountLargeMin = 10;
         private const int BiomeCountLargeMax = 50;
 
-        // ── Probability ranges per size category ──────────────────────────────────
+        // Probability ranges per size category
 
         // Small
         private const float ProbSmallMin = 0.00025f;
@@ -52,7 +52,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
         private const float ProbLargeMin = 0.00009f;
         private const float ProbLargeMax = 0.001f;
 
-        // ── Count ranges per size category ───────────────────────────────────────
+        // Count ranges per size category
 
         private const int CountSmallMin = 1;
         private const int CountSmallMax = 4;
@@ -60,13 +60,20 @@ namespace LivingPlanetSystem.RandomSpawnerModule
         private const int CountMediumMax = 3;
         private const int CountLarge = 1;
 
-        // ── Public API ────────────────────────────────────────────────────────────
+        // Public API
 
         /// <summary>
-        /// Loads the creature cache and registers randomized spawn distributions
-        /// for all creatures via LootDistributionHandler.
-        /// Should be called once when the game world is loaded (Aurora scene).
+        /// Creature name keywords that force Large category for biome eligibility.
+        /// Used for creatures whose collider underestimates their real size.
+        /// Does not affect size categorization, spawn probability, or count.
         /// </summary>
+        private static readonly string[] LargeByNameKeywords =
+        {
+            "leviathan",
+            "tessopatherio"
+        };
+
+        /// Loads the creature cache and registers randomized spawn distributions for all creatures via LootDistributionHandler.
         public static void RegisterSpawns()
         {
             Plugin.Log.LogInfo("[RSM_SpawnManager] Starting spawn registration...");
@@ -183,38 +190,33 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                                $"{registered}/{creatures.Count} creatures registered.");
         }
 
-        // ── Private helpers ───────────────────────────────────────────────────────
+        //Private helpers
 
-        /// <summary>
-        /// Returns true if the creature name contains "leviathan".
-        /// Used exclusively to restrict biome eligibility — does not affect
-        /// size categorization, spawn probability, or count.
-        /// </summary>
+        /// Returns true if the creature name contains any large-by-name keyword.
         private static bool IsLargeByName(TechType techType)
         {
-            return techType.ToString().ToLower().Contains("leviathan");
+            string name = techType.ToString().ToLower();
+            foreach (string keyword in LargeByNameKeywords)
+            {
+                if (name.Contains(keyword))
+                    return true;
+            }
+            return false;
         }
 
-        /// <summary>
         /// Returns true if the creature falls in the Large size category.
-        /// </summary>
         private static bool IsLargeCategory(float magnitude)
         {
             return magnitude >= MagnitudeMedium;
         }
 
-        /// <summary>
         /// Returns true if the creature falls in the Medium size category.
-        /// </summary>
         private static bool IsMediumCategory(float magnitude)
         {
             return magnitude >= MagnitudeSmall && magnitude < MagnitudeMedium;
         }
 
-        /// <summary>
         /// Returns the number of biomes to assign to a creature based on its size category.
-        /// Clamped to the number of available eligible biomes.
-        /// </summary>
         private static int GetBiomeCount(float magnitude, bool forceLarge, int maxAvailable, float multiplier, Random random)
         {
             int min, max;
@@ -241,9 +243,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             return Math.Max(1, Math.Min(scaled, maxAvailable));
         }
 
-        /// <summary>
         /// Picks a random subset of biomes using a Fisher-Yates shuffle.
-        /// </summary>
         private static List<BiomeType> PickRandomBiomes(List<BiomeType> eligible, int count, Random random)
         {
             List<BiomeType> shuffled = new List<BiomeType>(eligible);
@@ -259,10 +259,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             return shuffled.GetRange(0, count);
         }
 
-        /// <summary>
         /// Generates a random spawn probability based on creature size category.
-        /// The global spawn multiplier is applied and the result is clamped to [0.0001, 1.0].
-        /// </summary>
         private static float GenerateProbability(float magnitude, bool forceLarge, float multiplier, Random random)
         {
             float min, max;
@@ -287,10 +284,8 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             return Math.Max(0.0001f, Math.Min(1.0f, baseProbability * multiplier));
         }
 
-        /// <summary>
         /// Generates a spawn count based on creature size category.
         /// Large creatures always spawn alone.
-        /// </summary>
         private static int GenerateCount(float magnitude, bool forceLarge, Random random)
         {
             if (IsLargeCategory(magnitude) || forceLarge)
