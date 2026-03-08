@@ -71,7 +71,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
         {
             "leviathan",
             "tessopatherio",
-            "SeaTreader"
+            "seatreader"
         };
 
         /// Loads the creature cache and registers randomized spawn distributions for all creatures via LootDistributionHandler.
