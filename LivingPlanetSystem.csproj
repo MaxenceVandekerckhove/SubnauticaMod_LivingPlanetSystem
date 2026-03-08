@@ -84,6 +84,7 @@
     <Compile Include="RandomSpawnerModule\RSM_CreatureFilter.cs" />
     <Compile Include="RandomSpawnerModule\RSM_CreatureRegistry.cs" />
     <Compile Include="RandomSpawnerModule\RSM_SpawnManager.cs" />
+    <Compile Include="SizeVariationModule\SVM_CreatureScale.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
