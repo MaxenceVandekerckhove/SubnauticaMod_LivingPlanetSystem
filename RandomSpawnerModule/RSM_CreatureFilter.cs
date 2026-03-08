@@ -19,7 +19,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
     {
         // Constants
 
-        public const float SIZE_MAGNITUDE_LIMIT = 60f;
+        public const float SIZE_MAGNITUDE_LIMIT = 155f;
         public const float SIZE_LENGTH_LIMIT = float.MaxValue;
 
         // Private state

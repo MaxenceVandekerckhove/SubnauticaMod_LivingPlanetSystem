@@ -1,7 +1,6 @@
 ﻿using BepInEx.Configuration;
 using Nautilus.Options;
 using Nautilus.Handlers;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -42,6 +41,11 @@ namespace LivingPlanetSystem
             "silence",
             "dragonfly",
             "bloom",
+            "DeepBloop",
+            "ACU",
+            "LostOculusJuvenile",
+            "VoidMouth",
+            "MultiGarg"
         };
 
         // Config entries
