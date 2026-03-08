@@ -70,7 +70,8 @@ namespace LivingPlanetSystem.RandomSpawnerModule
         private static readonly string[] LargeByNameKeywords =
         {
             "leviathan",
-            "tessopatherio"
+            "tessopatherio",
+            "SeaTreader"
         };
 
         /// Loads the creature cache and registers randomized spawn distributions for all creatures via LootDistributionHandler.
