@@ -2,7 +2,8 @@
 using Nautilus.Handlers;
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
+using UWE;
+using Math = System.Math;
 
 namespace LivingPlanetSystem.RandomSpawnerModule
 {
@@ -11,6 +12,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
     /// and registering them with Subnautica's LootDistributionHandler.
     /// 
     /// For each creature in the cache :
+    ///   - Validates that the creature has a resolvable WorldEntityInfo (required by Nautilus)
     ///   - Retrieves the list of eligible biomes based on creature size
     ///   - Picks a random subset of biomes for this creature
     ///   - Assigns a random probability per biome influenced by creature size
@@ -60,8 +62,6 @@ namespace LivingPlanetSystem.RandomSpawnerModule
         private const int CountMediumMax = 3;
         private const int CountLarge = 1;
 
-        // Public API
-
         /// <summary>
         /// Creature name keywords that force Large category for biome eligibility.
         /// Used for creatures whose collider underestimates their real size.
@@ -83,13 +83,14 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 
             if (creatures.Count == 0)
             {
-                Plugin.Log.LogWarning("[RSM_SpawnManager] No creatures in cache — skipping spawn registration.");
+                Plugin.Log.LogWarning("[RSM_SpawnManager] No creatures in cache : skipping spawn registration.");
                 return;
             }
 
             float multiplier = LPS_Config.SpawnMultiplier;
             var random = LPS_SeedManager.Random;
             int registered = 0;
+            int skippedNoEntityInfo = 0;
 
             // Log creature classification summary
             int countSmall = 0, countMedium = 0, countLarge = 0;
@@ -139,12 +140,29 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             {
                 try
                 {
+                    string classId = CraftData.GetClassIdForTechType(techType);
+
+                    if (string.IsNullOrEmpty(classId))
+                    {
+                        Plugin.Log.LogWarning($"[RSM_SpawnManager] Could not get classId for {techType} : skipping.");
+                        continue;
+                    }
+
+                    // Guard : Nautilus requires a valid WorldEntityInfo to process LootDistribution entries.
+                    if (!WorldEntityDatabase.TryGetInfo(classId, out WorldEntityInfo _))
+                    {
+                        Plugin.Log.LogWarning($"[RSM_SpawnManager] No WorldEntityInfo for {techType} " +
+                                              $"(classId: {classId}) : skipping to avoid stray entity issues.");
+                        skippedNoEntityInfo++;
+                        continue;
+                    }
+
                     bool forceLarge = IsLargeByName(techType);
                     List<BiomeType> eligibleBiomes = RSM_BiomeClassifier.GetEligibleBiomes(magnitude, forceLarge);
 
                     if (eligibleBiomes.Count == 0)
                     {
-                        Plugin.Log.LogWarning($"[RSM_SpawnManager] No eligible biomes for {techType} — skipping.");
+                        Plugin.Log.LogWarning($"[RSM_SpawnManager] No eligible biomes for {techType} : skipping.");
                         continue;
                     }
 
@@ -166,14 +184,6 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                         });
                     }
 
-                    string classId = CraftData.GetClassIdForTechType(techType);
-
-                    if (string.IsNullOrEmpty(classId))
-                    {
-                        Plugin.Log.LogWarning($"[RSM_SpawnManager] Could not get classId for {techType} — skipping.");
-                        continue;
-                    }
-
                     LootDistributionHandler.EditLootDistributionData(classId, biomeDataList);
 
                     Plugin.Log.LogDebug($"[RSM_SpawnManager] Registered {techType} " +
@@ -188,10 +198,11 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             }
 
             Plugin.Log.LogInfo($"[RSM_SpawnManager] Spawn registration complete : " +
-                               $"{registered}/{creatures.Count} creatures registered.");
+                               $"{registered}/{creatures.Count} creatures registered " +
+                               $"({skippedNoEntityInfo} skipped : no WorldEntityInfo).");
         }
 
-        //Private helpers
+        // Private helpers
 
         /// Returns true if the creature name contains any large-by-name keyword.
         private static bool IsLargeByName(TechType techType)
@@ -239,7 +250,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             }
 
             int baseCount = random.Next(min, max + 1);
-            float scale = 1f + (float)(Math.Log10(multiplier) * 0.5);
+            float scale = 1f + (float)(System.Math.Log10(multiplier) * 0.5);
             int scaled = (int)Math.Round(baseCount * scale);
             return Math.Max(1, Math.Min(scaled, maxAvailable));
         }
