@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using UnityEngine;
 using UWE;
 
@@ -11,9 +10,13 @@ namespace LivingPlanetSystem.RandomSpawnerModule
     /// Responsible for filtering the raw creature list produced by RSM_CreatureRegistry.
     /// Removes creatures that are unsuitable for random spawning based on :
     ///   1. Name exclusion keywords
-    ///   2. Size limits (average of axes via collider bounds)
+    ///   2. Size limits (average of axes via collider geometry)
     /// The average of the 3 axes is used as the magnitude metric to normalize
     /// elongated creatures (e.g. Crabsnake, Shocker) against rounder ones.
+    /// 
+    /// Collider size is measured without activating the creature instance,
+    /// preventing BehaviourLOD.Update() from firing in the XMenu scene
+    /// where the Streamer is absent.
     /// </summary>
     public static class RSM_CreatureFilter
     {
@@ -29,7 +32,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 
         // Public API
 
-        /// Filters the raw creature list by name, then measures the size of each remaining creature via instantiated collider bounds.
+        /// Filters the raw creature list by name, then measures the size of each remaining creature via collider geometry.
         public static IEnumerator Filter(List<TechType> rawCreatures, Action onCompleted)
         {
             filteredCreatures.Clear();
@@ -74,14 +77,9 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                     continue;
                 }
 
-                // Instantiate and activate so colliders are properly initialized
                 GameObject instance = UnityEngine.Object.Instantiate(prefab);
-                instance.SetActive(true);
 
-                // Wait one frame for physics/colliders to initialize
-                yield return null;
-
-                // Measure size using all colliders combined
+                // Measure size using collider geometry
                 Vector3 size = GetColliderSize(instance, techType);
                 float magnitude = (size.x + size.y + size.z) / 3f;
                 float maxAxis = Mathf.Max(size.x, size.y, size.z);
@@ -146,7 +144,9 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             return false;
         }
 
-        /// Computes the combined bounds of all colliders on a creature instance.
+        /// Computes the combined size of all colliders on a creature instance
+        /// by reading their intrinsic geometry — no activation required.
+        /// Supports BoxCollider, SphereCollider, CapsuleCollider, and MeshCollider.
         private static Vector3 GetColliderSize(GameObject instance, TechType techType)
         {
             Collider[] colliders = instance.GetComponentsInChildren<Collider>(includeInactive: true);
@@ -157,11 +157,72 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                 return Vector3.zero;
             }
 
-            Bounds combined = colliders[0].bounds;
-            for (int i = 1; i < colliders.Length; i++)
-                combined.Encapsulate(colliders[i].bounds);
+            Vector3 min = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+            Vector3 max = new Vector3(float.MinValue, float.MinValue, float.MinValue);
+            bool anyValid = false;
 
-            return combined.size;
+            foreach (Collider col in colliders)
+            {
+                Vector3 colMin, colMax;
+
+                if (col is BoxCollider box)
+                {
+                    Vector3 halfSize = Vector3.Scale(box.size, box.transform.lossyScale) * 0.5f;
+                    halfSize = new Vector3(Mathf.Abs(halfSize.x), Mathf.Abs(halfSize.y), Mathf.Abs(halfSize.z));
+                    Vector3 center = box.transform.TransformPoint(box.center);
+                    colMin = center - halfSize;
+                    colMax = center + halfSize;
+                }
+                else if (col is SphereCollider sphere)
+                {
+                    float radius = sphere.radius * Mathf.Max(
+                        Mathf.Abs(sphere.transform.lossyScale.x),
+                        Mathf.Abs(sphere.transform.lossyScale.y),
+                        Mathf.Abs(sphere.transform.lossyScale.z));
+                    Vector3 center = sphere.transform.TransformPoint(sphere.center);
+                    colMin = center - Vector3.one * radius;
+                    colMax = center + Vector3.one * radius;
+                }
+                else if (col is CapsuleCollider capsule)
+                {
+                    float scale = Mathf.Max(
+                        Mathf.Abs(capsule.transform.lossyScale.x),
+                        Mathf.Abs(capsule.transform.lossyScale.y),
+                        Mathf.Abs(capsule.transform.lossyScale.z));
+                    float radius = capsule.radius * scale;
+                    float halfHeight = Mathf.Max(capsule.height * scale * 0.5f, radius);
+                    Vector3 center = capsule.transform.TransformPoint(capsule.center);
+                    colMin = center - new Vector3(radius, halfHeight, radius);
+                    colMax = center + new Vector3(radius, halfHeight, radius);
+                }
+                else if (col is MeshCollider mesh && mesh.sharedMesh != null)
+                {
+                    Bounds b = mesh.sharedMesh.bounds;
+                    Vector3 s = mesh.transform.lossyScale;
+                    Vector3 scaledSize = Vector3.Scale(b.size, new Vector3(
+                        Mathf.Abs(s.x), Mathf.Abs(s.y), Mathf.Abs(s.z)));
+                    Vector3 center = mesh.transform.TransformPoint(b.center);
+                    colMin = center - scaledSize * 0.5f;
+                    colMax = center + scaledSize * 0.5f;
+                }
+                else
+                {
+                    // Unknown or unsupported collider type — skip
+                    continue;
+                }
+
+                min = Vector3.Min(min, colMin);
+                max = Vector3.Max(max, colMax);
+                anyValid = true;
+            }
+
+            if (!anyValid)
+            {
+                Plugin.Log.LogWarning($"[RSM_CreatureFilter] No supported collider type on {techType} : size reported as zero.");
+                return Vector3.zero;
+            }
+
+            return max - min;
         }
     }
 }
