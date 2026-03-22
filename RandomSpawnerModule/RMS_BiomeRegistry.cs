@@ -17,7 +17,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
         // Exclusion rules
 
         /// Any biome whose name contains one of these strings will be excluded.
-        private static readonly string[] ExcludedKeywords =
+        public static readonly string[] ExcludedKeywords =
         {
             "Unassigned",
             "Obsolete",

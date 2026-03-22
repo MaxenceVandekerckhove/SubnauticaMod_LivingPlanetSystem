@@ -116,6 +116,18 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             return RSM_BiomeRegistry.GetAllBiomes();
         }
 
+        /// Returns the names of all unrestricted biomes as strings.
+        public static List<string> GetUnrestrictedBiomeNames()
+        {
+            var names = new List<string>();
+
+            foreach (BiomeType biome in unrestrictedBiomes)
+                names.Add(biome.ToString());
+
+            return names;
+        }
+
+
         /// Returns the number of unrestricted biomes.
         public static int UnrestrictedCount => unrestrictedBiomes.Count;
 

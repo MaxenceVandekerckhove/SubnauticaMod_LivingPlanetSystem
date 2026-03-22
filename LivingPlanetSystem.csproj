@@ -78,6 +78,13 @@
     <Compile Include="Patches\SaveLoadManager.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RandomEventModule\Events\ApexPredatorHunt\REM_ApexPredatorHunt.cs" />
+    <Compile Include="RandomEventModule\Events\ApexPredatorHunt\REM_HuntLoop.cs" />
+    <Compile Include="RandomEventModule\Events\ApexPredatorHunt\REM_PredatorPool.cs" />
+    <Compile Include="RandomEventModule\Events\REM_SpawnLocator.cs" />
+    <Compile Include="RandomEventModule\REM_EventBase.cs" />
+    <Compile Include="RandomEventModule\REM_EventRegistry.cs" />
+    <Compile Include="RandomEventModule\REM_EventTimer.cs" />
     <Compile Include="RandomSpawnerModule\RMS_BiomeRegistry.cs" />
     <Compile Include="RandomSpawnerModule\RSM_BiomeClassifier.cs" />
     <Compile Include="RandomSpawnerModule\RSM_CreatureCache.cs" />

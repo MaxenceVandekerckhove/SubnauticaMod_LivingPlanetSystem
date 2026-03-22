@@ -2,6 +2,7 @@
 using BepInEx.Logging;
 using HarmonyLib;
 using LivingPlanetSystem.Core;
+using LivingPlanetSystem.RandomEventModule;
 using LivingPlanetSystem.RandomSpawnerModule;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
@@ -71,6 +72,9 @@ namespace LivingPlanetSystem
         {
             Plugin.Log.LogInfo("[Plugin] Main menu detected : initializing RSM systems.");
 
+            // Stop any active REM timer from a previous session
+            REM_EventTimer.Stop();
+
             // Step 1 : initialize biome registry
             RSM_BiomeRegistry.Initialize();
 
@@ -98,6 +102,10 @@ namespace LivingPlanetSystem
             LPS_SeedManager.InitializeForCurrentSlot();
 
             RSM_SpawnManager.RegisterSpawns();
+
+            // Initialize and start the Random Event Module
+            REM_EventRegistry.Initialize();
+            REM_EventTimer.Start();
         }
 
         /// Called when RSM_CreatureRegistry finishes scanning all TechTypes.

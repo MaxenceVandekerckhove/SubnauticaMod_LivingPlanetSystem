@@ -20,6 +20,7 @@ namespace LivingPlanetSystem
 
         private const string SectionSpawn = "Spawn";
         private const string SectionSizeVariation = "SizeVariation";
+        private const string SectionRandomEvent = "RandomEvent";
 
         // Paths
 
@@ -50,12 +51,27 @@ namespace LivingPlanetSystem
             "MultiGarg"
         };
 
-        // Config entries
+
+        // Config entries — RSM
 
         private static ConfigEntry<float> spawnMultiplier;
+
+        // Config entries — SVM
+
         private static ConfigEntry<bool> sizeVariationEnabled;
         private static ConfigEntry<float> sizeVariationMin;
         private static ConfigEntry<float> sizeVariationMax;
+
+        // Config entries — REM
+
+        private static ConfigEntry<bool> randomEventEnabled;
+        private static ConfigEntry<float> eventIntervalMin;
+        private static ConfigEntry<float> eventIntervalMax;
+        private static ConfigEntry<bool> apexPredatorHuntEnabled;
+        private static ConfigEntry<float> apexPredatorHuntWeight;
+
+        // Cached blacklist
+
         private static string[] cachedKeywords;
 
         // Nested ModOptions
@@ -63,7 +79,7 @@ namespace LivingPlanetSystem
         /// Core LPS options — Spawn Multiplier
         private class LPS_CoreOptions : ModOptions
         {
-            public LPS_CoreOptions() : base("Living Planet System - Random Spawner Module")
+            public LPS_CoreOptions() : base("Living Planet System - 1. Random Spawner Module")
             {
                 var spawnSlider = ModSliderOption.Create(
                     id: "SpawnMultiplier",
@@ -89,7 +105,7 @@ namespace LivingPlanetSystem
         /// SVM options — Size Variation Module
         private class SVM_ModOptions : ModOptions
         {
-            public SVM_ModOptions() : base("Living Planet System — Size Variation Module")
+            public SVM_ModOptions() : base("Living Planet System — 2. Size Variation Module")
             {
                 var toggle = ModToggleOption.Create(
                     id: "SizeVariationEnabled",
@@ -145,13 +161,110 @@ namespace LivingPlanetSystem
             }
         }
 
+        /// REM options — Random Event Module
+        private class REM_ModOptions : ModOptions
+        {
+            public REM_ModOptions() : base("Living Planet System — 3. Random Event Module")
+            {
+                // Master toggle
+                var enableToggle = ModToggleOption.Create(
+                    id: "RandomEventEnabled",
+                    label: "Enable Random Events",
+                    value: randomEventEnabled.Value
+                );
+
+                enableToggle.OnChanged += (_, args) =>
+                {
+                    randomEventEnabled.Value = args.Value;
+                    Plugin.Log.LogInfo($"[LPS_Config] RandomEventEnabled updated : {randomEventEnabled.Value}");
+                };
+
+                AddItem(enableToggle);
+
+                // Interval min
+                var intervalMinSlider = ModSliderOption.Create(
+                    id: "EventIntervalMin",
+                    label: "Event Interval Min (minutes)",
+                    minValue: 1f,
+                    maxValue: 120f,
+                    value: eventIntervalMin.Value,
+                    defaultValue: 35f,
+                    step: 1f,
+                    valueFormat: "{0:F0} min"
+                );
+
+                intervalMinSlider.OnChanged += (_, args) =>
+                {
+                    eventIntervalMin.Value = args.Value;
+                    Plugin.Log.LogInfo($"[LPS_Config] EventIntervalMin updated : {eventIntervalMin.Value}");
+                };
+
+                AddItem(intervalMinSlider);
+
+                // Interval max
+                var intervalMaxSlider = ModSliderOption.Create(
+                    id: "EventIntervalMax",
+                    label: "Event Interval Max (minutes)",
+                    minValue: 1f,
+                    maxValue: 120f,
+                    value: eventIntervalMax.Value,
+                    defaultValue: 50f,
+                    step: 1f,
+                    valueFormat: "{0:F0} min"
+                );
+
+                intervalMaxSlider.OnChanged += (_, args) =>
+                {
+                    eventIntervalMax.Value = args.Value;
+                    Plugin.Log.LogInfo($"[LPS_Config] EventIntervalMax updated : {eventIntervalMax.Value}");
+                };
+
+                AddItem(intervalMaxSlider);
+
+                // ApexPredatorHunt toggle
+                var apexToggle = ModToggleOption.Create(
+                    id: "ApexPredatorHuntEnabled",
+                    label: "Enable Apex Predator Hunt",
+                    value: apexPredatorHuntEnabled.Value
+                );
+
+                apexToggle.OnChanged += (_, args) =>
+                {
+                    apexPredatorHuntEnabled.Value = args.Value;
+                    Plugin.Log.LogInfo($"[LPS_Config] ApexPredatorHuntEnabled updated : {apexPredatorHuntEnabled.Value}");
+                };
+
+                AddItem(apexToggle);
+
+                // ApexPredatorHunt weight
+                var apexWeightSlider = ModSliderOption.Create(
+                    id: "ApexPredatorHuntWeight",
+                    label: "Apex Predator Hunt Weight",
+                    minValue: 0.1f,
+                    maxValue: 10f,
+                    value: apexPredatorHuntWeight.Value,
+                    defaultValue: 1.0f,
+                    step: 0.1f,
+                    valueFormat: "{0:F1}"
+                );
+
+                apexWeightSlider.OnChanged += (_, args) =>
+                {
+                    apexPredatorHuntWeight.Value = args.Value;
+                    Plugin.Log.LogInfo($"[LPS_Config] ApexPredatorHuntWeight updated : {apexPredatorHuntWeight.Value}");
+                };
+
+                AddItem(apexWeightSlider);
+            }
+        }
+
         // Public API
 
         /// Initializes all configuration entries and registers them in Subnautica's in-game Mods menu via Nautilus.
         /// Also initializes the blacklist from blacklist.txt, creating it with defaults if it doesn't exist.
         public static void Initialize(ConfigFile config)
         {
-            // Spawn
+            // RSM - Spawn
             spawnMultiplier = config.Bind(
                 section: SectionSpawn,
                 key: "SpawnMultiplier",
@@ -161,7 +274,7 @@ namespace LivingPlanetSystem
                              "Acceptable range: 0.1 to 10.0"
             );
 
-            // Size Variation
+            // SVM - Size Variation
             sizeVariationEnabled = config.Bind(
                 section: SectionSizeVariation,
                 key: "SizeVariationEnabled",
@@ -186,36 +299,89 @@ namespace LivingPlanetSystem
                              "2.0 = double size | 3.0 = triple size. Acceptable range: 0.1 to 3.0"
             );
 
+            // REM — Random Event
+            randomEventEnabled = config.Bind(
+                section: SectionRandomEvent,
+                key: "RandomEventEnabled",
+                defaultValue: false,
+                description: "Enable or disable the Random Event module entirely."
+            );
+
+            eventIntervalMin = config.Bind(
+                section: SectionRandomEvent,
+                key: "EventIntervalMin",
+                defaultValue: 35f,
+                description: "Minimum time in minutes between random events. Acceptable range: 5 to 120."
+            );
+
+            eventIntervalMax = config.Bind(
+                section: SectionRandomEvent,
+                key: "EventIntervalMax",
+                defaultValue: 50f,
+                description: "Maximum time in minutes between random events. Acceptable range: 5 to 120."
+            );
+
+            apexPredatorHuntEnabled = config.Bind(
+                section: SectionRandomEvent,
+                key: "ApexPredatorHuntEnabled",
+                defaultValue: true,
+                description: "Enable or disable the Apex Predator Hunt event specifically."
+            );
+
+            apexPredatorHuntWeight = config.Bind(
+                section: SectionRandomEvent,
+                key: "ApexPredatorHuntWeight",
+                defaultValue: 1.0f,
+                description: "Relative weight for the Apex Predator Hunt event during weighted random selection. " +
+                             "Higher values make it more likely to be chosen when multiple events are available."
+            );
+
             OptionsPanelHandler.RegisterModOptions(new LPS_CoreOptions());
             OptionsPanelHandler.RegisterModOptions(new SVM_ModOptions());
+            OptionsPanelHandler.RegisterModOptions(new REM_ModOptions());
+
 
             InitializeBlacklist();
 
             Plugin.Log.LogInfo($"[LPS_Config] Configuration loaded : SpawnMultiplier={SpawnMultiplier}");
             Plugin.Log.LogInfo($"[LPS_Config] SizeVariation : Enabled={SizeVariationEnabled} " +
                                $"Min={SizeVariationMin} Max={SizeVariationMax}");
-            Plugin.Log.LogInfo($"[LPS_Config] Blacklist loaded : {cachedKeywords.Length} keywords : " +
-                               $"{string.Join(", ", cachedKeywords)}");
+            Plugin.Log.LogInfo($"[LPS_Config] RandomEvent : Enabled={RandomEventEnabled} " +
+                               $"Interval=[{EventIntervalMin}-{EventIntervalMax}] min");
+            Plugin.Log.LogInfo($"[LPS_Config] ApexPredatorHunt : Enabled={ApexPredatorHuntEnabled} " +
+                               $"Weight={ApexPredatorHuntWeight}");
+            Plugin.Log.LogInfo($"[LPS_Config] Blacklist : {cachedKeywords.Length} keywords.");
         }
 
         // Public properties
 
-        /// Returns the current spawn multiplier value.
+        // Public properties — RSM
         public static float SpawnMultiplier => spawnMultiplier.Value;
 
-        /// Returns whether the Size Variation module is enabled.
+        // Public properties — SVM
+
         public static bool SizeVariationEnabled => sizeVariationEnabled.Value;
 
-        /// Returns the minimum scale multiplier for size variation.
         public static float SizeVariationMin => sizeVariationMin.Value;
 
-        /// Returns the maximum scale multiplier for size variation.
         public static float SizeVariationMax => sizeVariationMax.Value;
 
-        /// Returns the current excluded keywords loaded from blacklist.txt.
+        // Public properties — REM
+
+        public static bool RandomEventEnabled => randomEventEnabled.Value;
+
+        public static float EventIntervalMin => eventIntervalMin.Value;
+
+        public static float EventIntervalMax => eventIntervalMax.Value;
+
+        public static bool ApexPredatorHuntEnabled => apexPredatorHuntEnabled.Value;
+
+        public static float ApexPredatorHuntWeight => apexPredatorHuntWeight.Value;
+
+        // Public properties — Blacklist
+
         public static string[] ExcludedKeywords => cachedKeywords;
 
-        /// Returns a normalized string representation of the current keywords.
         public static string ExcludedKeywordsFingerprint =>
             string.Join(",", cachedKeywords.OrderBy(k => k));
 

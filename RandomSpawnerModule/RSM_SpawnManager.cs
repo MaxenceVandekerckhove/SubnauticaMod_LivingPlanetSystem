@@ -205,7 +205,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
         // Private helpers
 
         /// Returns true if the creature name contains any large-by-name keyword.
-        private static bool IsLargeByName(TechType techType)
+        public static bool IsLargeByName(TechType techType)
         {
             string name = techType.ToString().ToLower();
             foreach (string keyword in LargeByNameKeywords)
@@ -217,7 +217,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
         }
 
         /// Returns true if the creature falls in the Large size category.
-        private static bool IsLargeCategory(float magnitude)
+        public static bool IsLargeCategory(float magnitude)
         {
             return magnitude >= MagnitudeMedium;
         }
