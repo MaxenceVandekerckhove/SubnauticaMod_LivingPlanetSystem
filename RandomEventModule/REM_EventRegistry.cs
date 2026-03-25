@@ -1,4 +1,5 @@
 ﻿using LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt;
+using LivingPlanetSystem.RandomEventModule.Events.Migration;
 using System;
 using System.Collections.Generic;
 
@@ -30,6 +31,9 @@ namespace LivingPlanetSystem.RandomEventModule
             random = new Random();
 
             registeredEvents.Add(new REM_ApexPredatorHunt());
+            registeredEvents.Add(new REM_MigrationSmall());
+            registeredEvents.Add(new REM_MigrationMedium());
+            registeredEvents.Add(new REM_MigrationLarge());
 
             Plugin.Log.LogInfo($"[REM_EventRegistry] {registeredEvents.Count} event(s) registered.");
         }

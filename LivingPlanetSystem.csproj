@@ -70,6 +70,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>J:\Steam\steamapps\common\Subnautica\Subnautica_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
     </Reference>
+    <Reference Include="WorldHeightLib">
+      <HintPath>..\ModInfo\Mods - Unloaded\WorldHeightLib\WorldHeightLib.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Core\LPS_SeedManager.cs" />
@@ -81,7 +84,12 @@
     <Compile Include="RandomEventModule\Events\ApexPredatorHunt\REM_ApexPredatorHunt.cs" />
     <Compile Include="RandomEventModule\Events\ApexPredatorHunt\REM_HuntLoop.cs" />
     <Compile Include="RandomEventModule\Events\ApexPredatorHunt\REM_PredatorPool.cs" />
+    <Compile Include="RandomEventModule\Events\Migration\REM_MigrationCategory.cs" />
+    <Compile Include="RandomEventModule\Events\Migration\REM_MigrationSwarm.cs" />
+    <Compile Include="RandomEventModule\Events\Migration\REM_SwarmLoop.cs" />
+    <Compile Include="RandomEventModule\Events\Migration\REM_SwarmPool.cs" />
     <Compile Include="RandomEventModule\Events\REM_SpawnLocator.cs" />
+    <Compile Include="RandomEventModule\Events\REM_SpawnPositionner.cs" />
     <Compile Include="RandomEventModule\REM_EventBase.cs" />
     <Compile Include="RandomEventModule\REM_EventRegistry.cs" />
     <Compile Include="RandomEventModule\REM_EventTimer.cs" />

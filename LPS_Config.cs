@@ -48,9 +48,9 @@ namespace LivingPlanetSystem
             "ACU",
             "LostOculusJuvenile",
             "VoidMouth",
-            "MultiGarg"
+            "MultiGarg",
+            "school"
         };
-
 
         // Config entries — RSM
 
@@ -69,6 +69,15 @@ namespace LivingPlanetSystem
         private static ConfigEntry<float> eventIntervalMax;
         private static ConfigEntry<bool> apexPredatorHuntEnabled;
         private static ConfigEntry<float> apexPredatorHuntWeight;
+
+        // Config entries — Migration
+
+        private static ConfigEntry<bool> migrationSmallEnabled;
+        private static ConfigEntry<float> migrationSmallWeight;
+        private static ConfigEntry<bool> migrationMediumEnabled;
+        private static ConfigEntry<float> migrationMediumWeight;
+        private static ConfigEntry<bool> migrationLargeEnabled;
+        private static ConfigEntry<float> migrationLargeWeight;
 
         // Cached blacklist
 
@@ -255,6 +264,111 @@ namespace LivingPlanetSystem
                 };
 
                 AddItem(apexWeightSlider);
+
+                // Small migration toggle
+                var smallToggle = ModToggleOption.Create(
+                    id: "MigrationSmallEnabled",
+                    label: "Enable Small Migration",
+                    value: migrationSmallEnabled.Value
+                );
+
+                smallToggle.OnChanged += (_, args) =>
+                {
+                    migrationSmallEnabled.Value = args.Value;
+                    Plugin.Log.LogInfo($"[LPS_Config] MigrationSmallEnabled updated : {migrationSmallEnabled.Value}");
+                };
+
+                AddItem(smallToggle);
+
+                // Small migration weight
+                var smallWeightSlider = ModSliderOption.Create(
+                    id: "MigrationSmallWeight",
+                    label: "Small Migration Weight",
+                    minValue: 0.1f,
+                    maxValue: 10f,
+                    value: migrationSmallWeight.Value,
+                    defaultValue: 1.0f,
+                    step: 0.1f,
+                    valueFormat: "{0:F1}"
+                );
+
+                smallWeightSlider.OnChanged += (_, args) =>
+                {
+                    migrationSmallWeight.Value = args.Value;
+                    Plugin.Log.LogInfo($"[LPS_Config] MigrationSmallWeight updated : {migrationSmallWeight.Value}");
+                };
+
+                AddItem(smallWeightSlider);
+
+                // Medium migration toggle
+                var mediumToggle = ModToggleOption.Create(
+                    id: "MigrationMediumEnabled",
+                    label: "Enable Medium Migration",
+                    value: migrationMediumEnabled.Value
+                );
+
+                mediumToggle.OnChanged += (_, args) =>
+                {
+                    migrationMediumEnabled.Value = args.Value;
+                    Plugin.Log.LogInfo($"[LPS_Config] MigrationMediumEnabled updated : {migrationMediumEnabled.Value}");
+                };
+
+                AddItem(mediumToggle);
+
+                // Medium migration weight
+                var mediumWeightSlider = ModSliderOption.Create(
+                    id: "MigrationMediumWeight",
+                    label: "Medium Migration Weight",
+                    minValue: 0.1f,
+                    maxValue: 10f,
+                    value: migrationMediumWeight.Value,
+                    defaultValue: 1.0f,
+                    step: 0.1f,
+                    valueFormat: "{0:F1}"
+                );
+
+                mediumWeightSlider.OnChanged += (_, args) =>
+                {
+                    migrationMediumWeight.Value = args.Value;
+                    Plugin.Log.LogInfo($"[LPS_Config] MigrationMediumWeight updated : {migrationMediumWeight.Value}");
+                };
+
+                AddItem(mediumWeightSlider);
+
+                // Large migration toggle
+                var largeToggle = ModToggleOption.Create(
+                    id: "MigrationLargeEnabled",
+                    label: "Enable Large Migration",
+                    value: migrationLargeEnabled.Value
+                );
+
+                largeToggle.OnChanged += (_, args) =>
+                {
+                    migrationLargeEnabled.Value = args.Value;
+                    Plugin.Log.LogInfo($"[LPS_Config] MigrationLargeEnabled updated : {migrationLargeEnabled.Value}");
+                };
+
+                AddItem(largeToggle);
+
+                // Large migration weight
+                var largeWeightSlider = ModSliderOption.Create(
+                    id: "MigrationLargeWeight",
+                    label: "Large Migration Weight",
+                    minValue: 0.1f,
+                    maxValue: 10f,
+                    value: migrationLargeWeight.Value,
+                    defaultValue: 1.0f,
+                    step: 0.1f,
+                    valueFormat: "{0:F1}"
+                );
+
+                largeWeightSlider.OnChanged += (_, args) =>
+                {
+                    migrationLargeWeight.Value = args.Value;
+                    Plugin.Log.LogInfo($"[LPS_Config] MigrationLargeWeight updated : {migrationLargeWeight.Value}");
+                };
+
+                AddItem(largeWeightSlider);
             }
         }
 
@@ -324,7 +438,7 @@ namespace LivingPlanetSystem
             apexPredatorHuntEnabled = config.Bind(
                 section: SectionRandomEvent,
                 key: "ApexPredatorHuntEnabled",
-                defaultValue: true,
+                defaultValue: false,
                 description: "Enable or disable the Apex Predator Hunt event specifically."
             );
 
@@ -336,10 +450,55 @@ namespace LivingPlanetSystem
                              "Higher values make it more likely to be chosen when multiple events are available."
             );
 
+            // Migration events
+            migrationSmallEnabled = config.Bind(
+                section: SectionRandomEvent,
+                key: "MigrationSmallEnabled",
+                defaultValue: false,
+                description: "Enable or disable the Small Migration event. " +
+                             "Spawns a group of 15–20 adults and 5–12 juveniles of a small creature."
+            );
+
+            migrationSmallWeight = config.Bind(
+                section: SectionRandomEvent,
+                key: "MigrationSmallWeight",
+                defaultValue: 1.0f,
+                description: "Relative weight for the Small Migration event during weighted random selection."
+            );
+
+            migrationMediumEnabled = config.Bind(
+                section: SectionRandomEvent,
+                key: "MigrationMediumEnabled",
+                defaultValue: false,
+                description: "Enable or disable the Medium Migration event. " +
+                             "Spawns a group of 10–15 adults and 2–8 juveniles of a medium creature."
+            );
+
+            migrationMediumWeight = config.Bind(
+                section: SectionRandomEvent,
+                key: "MigrationMediumWeight",
+                defaultValue: 1.0f,
+                description: "Relative weight for the Medium Migration event during weighted random selection."
+            );
+
+            migrationLargeEnabled = config.Bind(
+                section: SectionRandomEvent,
+                key: "MigrationLargeEnabled",
+                defaultValue: false,
+                description: "Enable or disable the Large Migration event. " +
+                             "Spawns a group of 1–3 adults and 0–3 juveniles of a large creature."
+            );
+
+            migrationLargeWeight = config.Bind(
+                section: SectionRandomEvent,
+                key: "MigrationLargeWeight",
+                defaultValue: 1.0f,
+                description: "Relative weight for the Large Migration event during weighted random selection."
+            );
+
             OptionsPanelHandler.RegisterModOptions(new LPS_CoreOptions());
             OptionsPanelHandler.RegisterModOptions(new SVM_ModOptions());
             OptionsPanelHandler.RegisterModOptions(new REM_ModOptions());
-
 
             InitializeBlacklist();
 
@@ -350,36 +509,37 @@ namespace LivingPlanetSystem
                                $"Interval=[{EventIntervalMin}-{EventIntervalMax}] min");
             Plugin.Log.LogInfo($"[LPS_Config] ApexPredatorHunt : Enabled={ApexPredatorHuntEnabled} " +
                                $"Weight={ApexPredatorHuntWeight}");
+            Plugin.Log.LogInfo($"[LPS_Config] Migration : " +
+                               $"Small={MigrationSmallEnabled}(w={MigrationSmallWeight}) " +
+                               $"Medium={MigrationMediumEnabled}(w={MigrationMediumWeight}) " +
+                               $"Large={MigrationLargeEnabled}(w={MigrationLargeWeight})");
             Plugin.Log.LogInfo($"[LPS_Config] Blacklist : {cachedKeywords.Length} keywords.");
         }
-
-        // Public properties
 
         // Public properties — RSM
         public static float SpawnMultiplier => spawnMultiplier.Value;
 
         // Public properties — SVM
-
         public static bool SizeVariationEnabled => sizeVariationEnabled.Value;
-
         public static float SizeVariationMin => sizeVariationMin.Value;
-
         public static float SizeVariationMax => sizeVariationMax.Value;
 
         // Public properties — REM
-
         public static bool RandomEventEnabled => randomEventEnabled.Value;
-
         public static float EventIntervalMin => eventIntervalMin.Value;
-
         public static float EventIntervalMax => eventIntervalMax.Value;
-
         public static bool ApexPredatorHuntEnabled => apexPredatorHuntEnabled.Value;
-
         public static float ApexPredatorHuntWeight => apexPredatorHuntWeight.Value;
 
-        // Public properties — Blacklist
+        // Public properties — Migration
+        public static bool MigrationSmallEnabled => migrationSmallEnabled.Value;
+        public static float MigrationSmallWeight => migrationSmallWeight.Value;
+        public static bool MigrationMediumEnabled => migrationMediumEnabled.Value;
+        public static float MigrationMediumWeight => migrationMediumWeight.Value;
+        public static bool MigrationLargeEnabled => migrationLargeEnabled.Value;
+        public static float MigrationLargeWeight => migrationLargeWeight.Value;
 
+        // Public properties — Blacklist
         public static string[] ExcludedKeywords => cachedKeywords;
 
         public static string ExcludedKeywordsFingerprint =>
