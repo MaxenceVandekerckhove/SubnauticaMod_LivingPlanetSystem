@@ -7,8 +7,7 @@ using UnityEngine;
 namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
 {
     /// <summary>
-    /// Responsible for building the pool of eligible apex predators
-    /// for the ApexPredatorHunt event.
+    /// Responsible for building the pool of eligible apex predators for the ApexPredatorHunt event.
     /// 
     /// A creature is eligible if :
     ///   - It is classified as Large or LargeByName by RSM_SpawnManager.
@@ -20,20 +19,14 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
     public static class REM_PredatorPool
     {
         // Internal blacklist
-
-        /// Creatures whose name contains any of these keywords are excluded
-        /// from the ApexPredatorHunt event regardless of their size classification.
         private static readonly string[] Blacklist =
         {
-            "seadragon",
-            "ancientbloop"
+            "baby"
         };
 
         // Public API
 
-        /// Reads the RSM creature cache, filters by size and blacklist, then checks
-        /// each remaining candidate's prefab for an aggressive component.
-        /// Returns the final pool via callback once all checks are complete.
+        // Reads the RSM creature cache, filters by size and blacklist, then checks each remaining candidate's prefab for an aggressive component.
         public static IEnumerator Build(Action<List<TechType>> onCompleted)
         {
             var cache = RSM_CreatureCache.LoadCache();
@@ -46,7 +39,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
 
             foreach (var (techType, magnitude) in cache)
             {
-                // Size filter
+                // 1. Size filter
                 bool isLarge = RSM_SpawnManager.IsLargeByName(techType) ||
                                RSM_SpawnManager.IsLargeCategory(magnitude);
 
@@ -56,7 +49,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
                     continue;
                 }
 
-                // Blacklist filter
+                // 2. Blacklist filter
                 if (IsBlacklisted(techType))
                 {
                     Plugin.Log.LogDebug($"[REM_PredatorPool] {techType} blacklisted : skipping.");
@@ -66,7 +59,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
 
                 checkedCount++;
 
-                // Aggro check — requires loading the prefab
+                // 3. Aggro check
                 var task = CraftData.GetPrefabForTechTypeAsync(techType, verbose: false);
                 yield return task;
 
@@ -102,7 +95,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
 
         // Private helpers
 
-        /// Returns true if the creature name contains any blacklist keyword.
+        // Returns true if the creature name contains any blacklist keyword.
         private static bool IsBlacklisted(TechType techType)
         {
             string name = techType.ToString().ToLower();

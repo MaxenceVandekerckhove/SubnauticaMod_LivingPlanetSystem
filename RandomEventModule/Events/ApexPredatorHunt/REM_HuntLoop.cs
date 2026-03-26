@@ -8,10 +8,8 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
     /// Responsible for driving the hunt behaviour once the apex predator is spawned.
     /// 
     /// Responsibilities :
-    ///   - Disables SwimRandom and LeashPosition so the predator does not drift
-    ///     back to its spawn point.
-    ///   - Re-applies aggro toward the player every AggroRefreshInterval seconds
-    ///     to prevent natural de-aggro.
+    ///   - Disables SwimRandom and LeashPosition so the predator does not drift back to its spawn point.
+    ///   - Re-applies aggro toward the player every AggroRefreshInterval seconds to prevent natural de-aggro.
     ///   - Monitors three end conditions every frame :
     ///       1. Creature destroyed naturally  → event ends cleanly.
     ///       2. Creature within ArrivalRadius → wander behaviours restored, event ends.
@@ -21,19 +19,18 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
     {
         // Constants
 
-        /// Distance in metres at which the predator is considered to have reached the player.
+        // Distance in metres at which the predator is considered to have reached the player.
         private const float ArrivalRadius = 25f;
 
-        /// Maximum duration of the hunt in seconds before the predator is despawned.
+        // Maximum duration of the hunt in seconds before the predator is despawned.
         private const float HuntTimeout = 180f;
 
-        /// Interval in seconds between aggro refresh calls.
+        // Interval in seconds between aggro refresh calls.
         private const float AggroRefreshInterval = 0.1f;
 
         // Public API
 
-        /// Starts the hunt loop for the given predator instance.
-        /// Assumes the instance has already been spawned and activated.
+        // Starts the hunt loop for the given predator instance.
         public static IEnumerator Run(GameObject instance)
         {
             if (instance == null)
@@ -61,7 +58,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
 
             while (elapsed < HuntTimeout)
             {
-                // End condition 1 : creature destroyed naturally
+                // End condition 1 : Creature destroyed naturally
                 if (instance == null)
                 {
                     Plugin.Log.LogInfo("[REM_HuntLoop] Predator was destroyed naturally : event ended.");
@@ -71,7 +68,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
 
                 float dist = Vector3.Distance(instance.transform.position, player.transform.position);
 
-                // End condition 2 : predator reached the player
+                // End condition 2 : Predator reached the player
                 if (dist <= ArrivalRadius)
                 {
                     Plugin.Log.LogInfo($"[REM_HuntLoop] Predator reached the player (dist={dist:F1}m) : " +
@@ -92,7 +89,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
                 yield return null;
             }
 
-            // End condition 3 : timeout
+            // End condition 3 : Timeout
             Plugin.Log.LogInfo($"[REM_HuntLoop] Hunt timed out after {HuntTimeout}s : despawning predator.");
 
             if (instance != null)
@@ -101,13 +98,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
 
         // Private helpers
 
-        /// Forces the creature to hunt the player by :
-        ///   1. Setting Aggression to maximum so AttackLastTarget.Evaluate() passes its threshold.
-        ///   2. Setting the LastTarget on all aggressive components to the player.
-        ///   3. Extending rememberTargetTime on AttackLastTarget so the target is not
-        ///      forgotten between aggro refreshes.
-        ///   4. Directly calling SwimBehaviour.Attack() toward the player position to
-        ///      bypass CanBeAttacked() checks that block aggro when the player is in a base.
+        // Forces the creature to hunt the player
         private static void ApplyAggro(GameObject instance, GameObject player)
         {
             if (instance == null || player == null)
@@ -167,7 +158,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
             }
         }
 
-        /// Disables SwimRandom and StayAtLeashPosition to prevent the predator from wandering.
+        // Disables SwimRandom and StayAtLeashPosition to prevent the predator from wandering.
         private static void DisableWanderBehaviours(GameObject instance)
         {
             foreach (SwimRandom c in instance.GetComponentsInChildren<SwimRandom>(includeInactive: true))
@@ -180,7 +171,6 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
         }
 
         /// Re-enables SwimRandom and StayAtLeashPosition when the hunt ends naturally.
-        /// Updates creature.leashPosition to the creature's current position so it stays in the player's area rather than returning to its original spawn point.
         private static void RestoreWanderBehaviours(GameObject instance)
         {
             if (instance == null)

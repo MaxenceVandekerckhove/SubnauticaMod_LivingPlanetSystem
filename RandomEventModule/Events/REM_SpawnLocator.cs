@@ -1,47 +1,49 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using LivingPlanetSystem.RandomSpawnerModule;
 using UnityEngine;
+using WorldHeightLib;
 
 namespace LivingPlanetSystem.RandomEventModule.Events
 {
     /// <summary>
-    /// Responsible for finding a valid spawn position for REM events.
-    /// 
-    /// Strategy : scan all active Creature instances in the scene and use one of them
-    /// as a spawn anchor. This guarantees the position is in water, in a loaded chunk,
-    /// and in a naturally inhabited area.
-    /// 
-    /// A candidate creature is valid if :
-    ///   - Its distance to the player is greater than SpawnMinDistance.
-    ///   - Its Y position is greater than or equal to the player's Y position.
-    ///   - Its biome name does not contain any keyword from RSM_BiomeRegistry.ExcludedKeywords.
-    /// 
+    /// Responsible for finding a valid underwater spawn position around the player
+    /// for REM events that need to place a creature in the world.
+    ///
+    /// Strategy :
+    ///   Sample random points inside a horizontal ring around the player
+    ///   (between spawnRadiusMin and spawnRadiusMax), with a random downward
+    ///   vertical offset from the player's Y, then validate each candidate
+    ///   against three conditions :
+    ///     1. Y strictly below 0 (underwater).
+    ///     2. Y strictly above groundHeight + GroundClearance (WorldHeightLib).
+    ///     3. Biome not in RSM_BiomeRegistry.ExcludedKeywords.
+    ///   Retries up to MaxAttempts times before giving up.
+    ///
+    /// Search radius and vertical offset are passed per call so each event
+    /// can independently control where its creature is allowed to spawn.
     /// </summary>
     public static class REM_SpawnLocator
     {
-        // Constants
+        // Validation constants
 
-        /// Minimum distance from the player for a spawn candidate to be valid.
-        public const float SpawnMinDistance = 200f;
+        /// Minimum clearance in metres above the terrain.
+        private const float GroundClearance = 10f;
 
-        /// Maximum distance from the player for a spawn candidate to be valid.
-        public const float SpawnMaxDistance = 600f;
-
-        /// Seconds to wait between retry attempts.
-        private const float RetryDelay = 5f;
-
-        /// Maximum number of scan attempts before giving up.
-        private const int MaxRetries = 5;
+        /// Maximum number of candidate positions tested before giving up.
+        private const int MaxAttempts = 20;
 
         // Public API
 
-        /// Scans active creatures in the scene to find a valid spawn position.
-        public static IEnumerator Find(Action<Vector3?> onCompleted)
+        /// <summary>
+        /// Searches for a valid spawn position in a horizontal ring around the player.
+        public static IEnumerator Find(Action<Vector3?> onCompleted,
+            float spawnRadiusMin = 150f,
+            float spawnRadiusMax = 400f,
+            float verticalOffsetMax = 65f)
         {
+            // Guard : player must be present
             GameObject player = Player.main?.gameObject;
-
             if (player == null)
             {
                 Plugin.Log.LogWarning("[REM_SpawnLocator] Player not found : aborting.");
@@ -49,93 +51,92 @@ namespace LivingPlanetSystem.RandomEventModule.Events
                 yield break;
             }
 
-            for (int attempt = 1; attempt <= MaxRetries; attempt++)
+            // Guard : WorldHeightLib must be available
+            if (HeightMap.Instance == null)
             {
-                Plugin.Log.LogInfo($"[REM_SpawnLocator] Scan attempt {attempt}/{MaxRetries}...");
+                Plugin.Log.LogWarning("[REM_SpawnLocator] HeightMap.Instance is null : aborting.");
+                onCompleted?.Invoke(null);
+                yield break;
+            }
 
-                Vector3? result = ScanCreatures(player);
+            Vector3 playerPos = player.transform.position;
 
-                if (result.HasValue)
+            Plugin.Log.LogInfo($"[REM_SpawnLocator] Searching for spawn position " +
+                               $"(radiusMin={spawnRadiusMin}, radiusMax={spawnRadiusMax}, " +
+                               $"verticalOffsetMax={verticalOffsetMax})...");
+
+            for (int attempt = 1; attempt <= MaxAttempts; attempt++)
+            {
+                Vector2 randomCircle = UnityEngine.Random.insideUnitCircle.normalized;
+                float distance = UnityEngine.Random.Range(spawnRadiusMin, spawnRadiusMax);
+                float verticalOffset = UnityEngine.Random.Range(0f, verticalOffsetMax);
+
+                Vector3 candidate = new Vector3(
+                    playerPos.x + randomCircle.x * distance,
+                    playerPos.y - verticalOffset,
+                    playerPos.z + randomCircle.y * distance
+                );
+
+                if (IsPositionValid(candidate))
                 {
-                    Plugin.Log.LogInfo($"[REM_SpawnLocator] Valid position found : {result.Value}.");
-                    onCompleted?.Invoke(result.Value);
+                    Plugin.Log.LogInfo($"[REM_SpawnLocator] Valid position found on attempt {attempt} : {candidate}.");
+                    onCompleted?.Invoke(candidate);
                     yield break;
                 }
 
-                Plugin.Log.LogWarning($"[REM_SpawnLocator] No valid candidate on attempt {attempt}." +
-                                      (attempt < MaxRetries ? $" Retrying in {RetryDelay}s..." : " Giving up."));
-
-                if (attempt < MaxRetries)
-                {
-                    float waited = 0f;
-                    while (waited < RetryDelay)
-                    {
-                        waited += Time.deltaTime;
-                        yield return null;
-                    }
-                }
+                Plugin.Log.LogDebug($"[REM_SpawnLocator] Attempt {attempt}/{MaxAttempts} invalid : {candidate}.");
+                yield return null;
             }
 
+            Plugin.Log.LogWarning($"[REM_SpawnLocator] No valid position found after {MaxAttempts} attempts.");
             onCompleted?.Invoke(null);
         }
 
         // Private helpers
 
-        /// Scans all active Creature instances, logs their data, filters valid candidates, and returns the position of a randomly chosen one.
-        private static Vector3? ScanCreatures(GameObject player)
+        private static bool IsPositionValid(Vector3 position)
         {
-            Creature[] allCreatures = UnityEngine.Object.FindObjectsOfType<Creature>();
-            Vector3 playerPos = player.transform.position;
-            var candidates = new List<Creature>();
+            // 1. Must be underwater
+            if (position.y >= 0f)
+                return false;
 
-            Plugin.Log.LogInfo($"[REM_SpawnLocator] {allCreatures.Length} creature(s) found in scene.");
-
-            foreach (Creature creature in allCreatures)
+            // 2. Must be above terrain with clearance
+            if (!HeightMap.Instance.TryGetValueAtPosition(
+                    new Vector2(position.x, position.z), out float groundHeight))
             {
-                if (creature == null || creature.gameObject == null)
-                    continue;
-
-                Vector3 pos = creature.transform.position;
-                float distance = Vector3.Distance(pos, playerPos);
-                string biomeName = WaterBiomeManager.main?.GetBiome(pos) ?? string.Empty;
-
-                // Filter 1 : distance
-                if (distance <= SpawnMinDistance || distance > SpawnMaxDistance)
-                    continue;
-
-                // Filter 2 : Y must be >= player Y
-                if (pos.y < playerPos.y || pos.y >= 0f)
-                    continue;
-
-                // Filter 3 : biome must not contain any excluded keyword
-                if (IsBiomeExcluded(biomeName))
-                    continue;
-
-                candidates.Add(creature);
+                Plugin.Log.LogDebug($"[REM_SpawnLocator] HeightMap returned no data for " +
+                                    $"({position.x:F0}, {position.z:F0}) : rejecting.");
+                return false;
             }
 
-            Plugin.Log.LogInfo($"[REM_SpawnLocator] {candidates.Count} valid candidate(s) after filtering.");
+            if (position.y <= groundHeight + GroundClearance)
+            {
+                Plugin.Log.LogDebug($"[REM_SpawnLocator] y={position.y:F1} too close to ground " +
+                                    $"(ground={groundHeight:F1}, " +
+                                    $"required above {groundHeight + GroundClearance:F1}) : rejecting.");
+                return false;
+            }
 
-            if (candidates.Count == 0)
-                return null;
+            // 3. Biome must not be excluded
+            string biome = WaterBiomeManager.main?.GetBiome(position) ?? string.Empty;
 
-            int index = new System.Random().Next(candidates.Count);
-            Vector3 chosen = candidates[index].transform.position;
+            if (IsBiomeExcluded(biome))
+            {
+                Plugin.Log.LogDebug($"[REM_SpawnLocator] Biome '{biome}' at {position} is excluded : rejecting.");
+                return false;
+            }
 
-            Plugin.Log.LogInfo($"[REM_SpawnLocator] Chosen candidate : {candidates[index].name} at {chosen}.");
-
-            return chosen;
+            return true;
         }
 
-        /// Returns true if the biome name contains any keyword from RSM_BiomeRegistry.ExcludedKeywords.
-        private static bool IsBiomeExcluded(string biomeName)
+        private static bool IsBiomeExcluded(string biome)
         {
-            if (string.IsNullOrEmpty(biomeName))
+            if (string.IsNullOrEmpty(biome))
                 return true;
 
             foreach (string keyword in RSM_BiomeRegistry.ExcludedKeywords)
             {
-                if (biomeName.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
+                if (biome.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
                     return true;
             }
 

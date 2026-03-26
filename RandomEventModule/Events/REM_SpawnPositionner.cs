@@ -29,7 +29,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events
         // Constants
 
         /// Distance from the player to the spawn and destination points along direction D.
-        private const float SpawnDistance = 100f;
+        private const float SpawnDistance = 200f;
         private const float DestinationDistance = 250f; 
 
         /// Maximum lateral offset applied to both points so the path varies.

@@ -18,6 +18,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
         // Blacklist — creatures excluded from all migration events regardless of size
         private static readonly string[] Blacklist =
         {
+            "baby"
         };
 
         // Adult count ranges per migration category

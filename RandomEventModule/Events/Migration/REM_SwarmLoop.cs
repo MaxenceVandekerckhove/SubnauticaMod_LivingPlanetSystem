@@ -29,6 +29,16 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
     ///   - leashPosition is updated to the instance's current position.
     ///
     /// Destroyed instances are removed from tracking silently without ending the event early.
+    ///
+    /// --- SwimBehaviour.SwimToInternal timing constraint ---
+    /// SwimToInternal sets overridingTarget = true for 0.2s on TurnAround and 0.5s
+    /// on Overshoot. While overridingTarget is active, any subsequent SwimTo call
+    /// returns immediately without effect. Calling SwimTo faster than the longest
+    /// override duration (0.5s) therefore produces a cycle where the creature
+    /// perpetually re-enters TurnAround or Overshoot and never advances — this is
+    /// the root cause of small creatures appearing stationary during migration.
+    /// SwimRefreshInterval must be strictly greater than 0.5s to guarantee each
+    /// SwimTo call lands after the previous override has fully expired.
     /// </summary>
     public static class REM_SwarmLoop
     {
@@ -40,7 +50,10 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
         /// Maximum duration of the migration in seconds before all instances are released.
         private const float SwarmTimeout = 300f;
 
-        /// How often (in seconds) SwimTo is refreshed on each instance.
+        /// Interval between SwimTo calls.
+        /// Must be strictly greater than SwimBehaviour's longest internal override duration
+        /// (Overshoot = 0.5s) to prevent new SwimTo calls from being silently dropped
+        /// while overridingTarget is still active.
         private const float SwimRefreshInterval = 0.1f;
 
         /// Scale multiplier applied to juvenile instances.
@@ -102,7 +115,9 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
                     yield break;
                 }
 
-                // Refresh SwimTo periodically with full 3D direction
+                // Refresh SwimTo at an interval that guarantees the previous
+                // SwimBehaviour override (TurnAround 0.2s / Overshoot 0.5s) has
+                // fully expired before we issue the next command.
                 refreshTimer += Time.deltaTime;
                 if (refreshTimer >= SwimRefreshInterval)
                 {
