@@ -29,31 +29,18 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
     ///   - leashPosition is updated to the instance's current position.
     ///
     /// Destroyed instances are removed from tracking silently without ending the event early.
-    ///
-    /// --- SwimBehaviour.SwimToInternal timing constraint ---
-    /// SwimToInternal sets overridingTarget = true for 0.2s on TurnAround and 0.5s
-    /// on Overshoot. While overridingTarget is active, any subsequent SwimTo call
-    /// returns immediately without effect. Calling SwimTo faster than the longest
-    /// override duration (0.5s) therefore produces a cycle where the creature
-    /// perpetually re-enters TurnAround or Overshoot and never advances — this is
-    /// the root cause of small creatures appearing stationary during migration.
-    /// SwimRefreshInterval must be strictly greater than 0.5s to guarantee each
-    /// SwimTo call lands after the previous override has fully expired.
     /// </summary>
     public static class REM_SwarmLoop
     {
         // Constants
 
-        /// Distance in metres at which an instance is considered to have arrived.
+        // Distance in metres at which an instance is considered to have arrived.
         private const float ArrivalRadius = 20f;
 
-        /// Maximum duration of the migration in seconds before all instances are released.
+        // Maximum duration of the migration in seconds before all instances are released.
         private const float SwarmTimeout = 300f;
 
         /// Interval between SwimTo calls.
-        /// Must be strictly greater than SwimBehaviour's longest internal override duration
-        /// (Overshoot = 0.5s) to prevent new SwimTo calls from being silently dropped
-        /// while overridingTarget is still active.
         private const float SwimRefreshInterval = 0.1f;
 
         /// Scale multiplier applied to juvenile instances.
@@ -67,7 +54,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
 
         // Public API
 
-        /// Starts the swarm loop for the given composition.
+        // Starts the swarm loop for the given composition.
         public static IEnumerator Run(
             List<GameObject> adultInstances,
             List<GameObject> juvenileInstances,
@@ -116,8 +103,6 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
                 }
 
                 // Refresh SwimTo at an interval that guarantees the previous
-                // SwimBehaviour override (TurnAround 0.2s / Overshoot 0.5s) has
-                // fully expired before we issue the next command.
                 refreshTimer += Time.deltaTime;
                 if (refreshTimer >= SwimRefreshInterval)
                 {
@@ -129,7 +114,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
                 yield return null;
             }
 
-            // Timeout reached — release survivors to vanilla AI
+            // Timeout reached
             Plugin.Log.LogInfo($"[REM_SwarmLoop] Timeout reached after {SwarmTimeout}s : " +
                                $"releasing {allInstances.Count} surviving instance(s) to vanilla AI.");
 
@@ -139,7 +124,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
 
         // Private helpers
 
-        /// Returns the swim velocity appropriate for the migration category.
+        // Returns the swim velocity appropriate for the migration category.
         private static float GetSwimVelocity(REM_MigrationCategory category)
         {
             switch (category)
@@ -150,7 +135,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
             }
         }
 
-        /// Applies a reduced scale to all juvenile instances.
+        // Applies a reduced scale to all juvenile instances.
         private static void ApplyJuvenileScale(List<GameObject> juveniles)
         {
             foreach (GameObject juvenile in juveniles)
@@ -165,7 +150,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
             }
         }
 
-        /// Returns true if all surviving instances are within ArrivalRadius of the destination.
+        // Returns true if all surviving instances are within ArrivalRadius of the destination.
         private static bool AllArrived(List<GameObject> instances, Vector3 destination)
         {
             foreach (GameObject instance in instances)
@@ -180,7 +165,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
             return true;
         }
 
-        /// Calls SwimTo on each surviving instance with a full 3D direction toward the destination.
+        // Calls SwimTo on each surviving instance with a full 3D direction toward the destination.
         private static void RefreshSwimTo(List<GameObject> instances, Vector3 destination, float velocity)
         {
             foreach (GameObject instance in instances)
@@ -206,7 +191,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
             }
         }
 
-        /// Disables all behaviours that could interfere with migration movement.
+        // Disables all behaviours that could interfere with migration movement.
         private static void DisableMigrationInterferingBehaviours(GameObject instance)
         {
             if (instance == null)
@@ -230,7 +215,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
             Plugin.Log.LogDebug($"[REM_SwarmLoop] Migration behaviours disabled on {instance.name}.");
         }
 
-        /// Re-enables all previously disabled behaviours and releases instances to vanilla AI.
+        // Re-enables all previously disabled behaviours and releases instances to vanilla AI.
         private static void ReleaseAll(List<GameObject> instances)
         {
             foreach (GameObject instance in instances)

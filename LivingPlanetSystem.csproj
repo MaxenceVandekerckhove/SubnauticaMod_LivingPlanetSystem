@@ -88,8 +88,8 @@
     <Compile Include="RandomEventModule\Events\Migration\REM_MigrationSwarm.cs" />
     <Compile Include="RandomEventModule\Events\Migration\REM_SwarmLoop.cs" />
     <Compile Include="RandomEventModule\Events\Migration\REM_SwarmPool.cs" />
+    <Compile Include="RandomEventModule\Events\REM_PathFinder.cs" />
     <Compile Include="RandomEventModule\Events\REM_SpawnLocator.cs" />
-    <Compile Include="RandomEventModule\Events\REM_SpawnPositionner.cs" />
     <Compile Include="RandomEventModule\REM_EventBase.cs" />
     <Compile Include="RandomEventModule\REM_EventRegistry.cs" />
     <Compile Include="RandomEventModule\REM_EventTimer.cs" />

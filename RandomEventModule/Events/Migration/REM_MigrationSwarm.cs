@@ -10,22 +10,34 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
     ///
     /// Sequence for each event :
     ///   1. REM_SwarmPool : Pick a creature and build the SwarmComposition.
-    ///   2. REM_SpawnPositioner : Find a spawn position and a destination that guarantee the migration path passes through the player's field of vision.
-    ///   3. Spawn N adult instances and M juvenile instances around the spawn position.
-    ///   4. REM_SwarmLoop : Drive all instances toward the destination, then release survivors to vanilla AI.
-    ///   
+    ///   2. REM_PathFinder : Find a valid migration path (A → B) that passes within the player's field of vision.
+    ///   3. Spawn N adult instances and M juvenile instances around position A.
+    ///   4. REM_SwarmLoop : Drive all instances toward B, then release survivors to vanilla AI.
+    ///
     /// </summary>
     public abstract class REM_MigrationSwarm : REM_EventBase
     {
         // Abstract contract
 
-        /// The size category handled by this migration event.
+        // The size category handled by this migration event.
         protected abstract REM_MigrationCategory Category { get; }
+
+        // Path finder parameters
+        protected virtual float DistanceA => 300f;
+        protected virtual float DistanceB => 350f;
+        protected virtual float MinPathLength => 200f;
+        protected virtual float PlayerPassRadius => 20f;
 
         // Constants
 
-        /// Radius within which individual instances are scattered around the spawn position.
-        private const float SpawnScatterRadius = 40f;
+        // Spawn scatter radius per migration category
+        private const float SpawnScatterRadiusSmall = 5f;
+        private const float SpawnScatterRadiusMedium = 10f;
+        private const float SpawnScatterRadiusLarge = 20f;
+
+        private const float SpawnScatterHeightSmall = 2f;
+        private const float SpawnScatterHeightMedium = 5f;
+        private const float SpawnScatterHeightLarge = 10f;
 
         // Execute
 
@@ -33,7 +45,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
         {
             Plugin.Log.LogInfo($"[REM_MigrationSwarm] Starting {Category} migration...");
 
-            // Step 1 : build swarm composition
+            // 1. Build swarm composition
             REM_SwarmPool.SwarmComposition composition = REM_SwarmPool.Build(Category, new System.Random());
 
             if (composition == null)
@@ -42,9 +54,15 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
                 yield break;
             }
 
-            // Step 2 : find migration path
-            REM_SpawnPositioner.MigrationPath path = null;
-            yield return REM_SpawnPositioner.Find(result => path = result);
+            // 2. Find migration path
+            REM_PathFinder.MigrationPath path = null;
+            yield return REM_PathFinder.Find(
+                onCompleted: result => path = result,
+                distanceA: DistanceA,
+                distanceB: DistanceB,
+                minPathLength: MinPathLength,
+                playerPassRadius: PlayerPassRadius
+            );
 
             if (path == null)
             {
@@ -52,7 +70,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
                 yield break;
             }
 
-            // Step 3 : load prefab
+            // 3. Load prefab
             var task = CraftData.GetPrefabForTechTypeAsync(composition.TechType, verbose: false);
             yield return task;
 
@@ -64,20 +82,22 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
                 yield break;
             }
 
-            // Step 4 : spawn adults and juveniles scattered around spawn position
+            // 4. Spawn adults and juveniles scattered around spawn position
+            var (scatterRadius, scatterHeight) = GetScatterRadius(Category);
+
             var adults = new List<GameObject>();
             var juveniles = new List<GameObject>();
 
             for (int i = 0; i < composition.AdultCount; i++)
             {
-                GameObject instance = SpawnInstance(prefab, path.SpawnPosition);
+                GameObject instance = SpawnInstance(prefab, path.SpawnPosition, scatterRadius, scatterHeight);
                 if (instance != null)
                     adults.Add(instance);
             }
 
             for (int i = 0; i < composition.JuvenileCount; i++)
             {
-                GameObject instance = SpawnInstance(prefab, path.SpawnPosition);
+GameObject instance = SpawnInstance(prefab, path.SpawnPosition, scatterRadius, scatterHeight);
                 if (instance != null)
                     juveniles.Add(instance);
             }
@@ -91,10 +111,9 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
             Plugin.Log.LogInfo($"[REM_MigrationSwarm] Spawned {adults.Count} adult(s) and " +
                                $"{juveniles.Count} juvenile(s) of {composition.TechType}.");
 
-            // Wait one frame for all components to initialize
             yield return null;
 
-            // Step 5 : hand off to swarm loop — pass Category for velocity selection
+            // 5. Hand off to swarm loop
             yield return REM_SwarmLoop.Run(adults, juveniles, path.DestinationPosition, Category);
 
             Plugin.Log.LogInfo($"[REM_MigrationSwarm] {Category} migration complete.");
@@ -102,23 +121,33 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
 
         // Private helpers
 
-        /// Instantiates one instance of the prefab at a random position scattered within SpawnScatterRadius around the spawn anchor.
-        private static GameObject SpawnInstance(GameObject prefab, Vector3 spawnAnchor)
+        // Returns the scatter radius appropriate for the migration category.
+        private static (float horizontal, float vertical) GetScatterRadius(REM_MigrationCategory category)
         {
-            Vector2 scatter = Random.insideUnitCircle * SpawnScatterRadius;
-            Vector3 spawnPos = spawnAnchor + new Vector3(scatter.x, 0f, scatter.y);
+            switch (category)
+            {
+                case REM_MigrationCategory.Large: return (SpawnScatterRadiusLarge, SpawnScatterHeightLarge);
+                case REM_MigrationCategory.Medium: return (SpawnScatterRadiusMedium, SpawnScatterHeightMedium);
+                default: return (SpawnScatterRadiusSmall, SpawnScatterHeightSmall);
+            }
+        }
+
+        // Instantiates one instance of the prefab at a random position scattered within scatterRadius around the spawn anchor.
+        private static GameObject SpawnInstance(GameObject prefab, Vector3 spawnAnchor,
+                                                float scatterRadius, float scatterHeight)
+        {
+            Vector2 scatter = Random.insideUnitCircle * scatterRadius;
+            float offsetY = Random.Range(-scatterHeight, scatterHeight);
+            Vector3 spawnPos = spawnAnchor + new Vector3(scatter.x, offsetY, scatter.y);
+
             GameObject instance = Object.Instantiate(prefab, spawnPos, Quaternion.identity);
             instance.SetActive(true);
-
             return instance;
         }
     }
 
-    // -------------------------------------------------------------------------
     // Concrete subclasses — one per migration category
-    // -------------------------------------------------------------------------
 
-    // Migration event for small creatures.
     public class REM_MigrationSmall : REM_MigrationSwarm
     {
         public override string EventId => "MigrationSmall";
@@ -128,7 +157,6 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
         protected override REM_MigrationCategory Category => REM_MigrationCategory.Small;
     }
 
-    // Migration event for medium creatures.
     public class REM_MigrationMedium : REM_MigrationSwarm
     {
         public override string EventId => "MigrationMedium";
@@ -138,7 +166,6 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
         protected override REM_MigrationCategory Category => REM_MigrationCategory.Medium;
     }
 
-    // Migration event for large creatures.
     public class REM_MigrationLarge : REM_MigrationSwarm
     {
         public override string EventId => "MigrationLarge";
