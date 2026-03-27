@@ -32,11 +32,11 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
 
         // Spawn scatter radius per migration category
         private const float SpawnScatterRadiusSmall = 5f;
-        private const float SpawnScatterRadiusMedium = 10f;
+        private const float SpawnScatterRadiusMedium = 15f;
         private const float SpawnScatterRadiusLarge = 20f;
 
         private const float SpawnScatterHeightSmall = 2f;
-        private const float SpawnScatterHeightMedium = 5f;
+        private const float SpawnScatterHeightMedium = 8f;
         private const float SpawnScatterHeightLarge = 10f;
 
         // Execute
@@ -97,7 +97,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
 
             for (int i = 0; i < composition.JuvenileCount; i++)
             {
-GameObject instance = SpawnInstance(prefab, path.SpawnPosition, scatterRadius, scatterHeight);
+                GameObject instance = SpawnInstance(prefab, path.SpawnPosition, scatterRadius, scatterHeight);
                 if (instance != null)
                     juveniles.Add(instance);
             }
@@ -141,6 +141,14 @@ GameObject instance = SpawnInstance(prefab, path.SpawnPosition, scatterRadius, s
             Vector3 spawnPos = spawnAnchor + new Vector3(scatter.x, offsetY, scatter.y);
 
             GameObject instance = Object.Instantiate(prefab, spawnPos, Quaternion.identity);
+
+            // Force a high enough cell level so the entity stays active at spawn distances beyond the Near/Medium streaming range.
+            LargeWorldEntity lwe = instance.GetComponent<LargeWorldEntity>();
+            if (lwe != null)
+                lwe.cellLevel = LargeWorldEntity.CellLevel.VeryFar;
+
+            LargeWorldEntity.Register(instance);
+
             instance.SetActive(true);
             return instance;
         }
@@ -155,6 +163,9 @@ GameObject instance = SpawnInstance(prefab, path.SpawnPosition, scatterRadius, s
         public override float Weight => LPS_Config.MigrationSmallWeight;
 
         protected override REM_MigrationCategory Category => REM_MigrationCategory.Small;
+
+        protected override float DistanceA => 130f;
+        protected override float DistanceB => 150f;
     }
 
     public class REM_MigrationMedium : REM_MigrationSwarm
@@ -164,6 +175,9 @@ GameObject instance = SpawnInstance(prefab, path.SpawnPosition, scatterRadius, s
         public override float Weight => LPS_Config.MigrationMediumWeight;
 
         protected override REM_MigrationCategory Category => REM_MigrationCategory.Medium;
+
+        protected override float DistanceA => 220f;
+        protected override float DistanceB => 250f;
     }
 
     public class REM_MigrationLarge : REM_MigrationSwarm
@@ -173,5 +187,8 @@ GameObject instance = SpawnInstance(prefab, path.SpawnPosition, scatterRadius, s
         public override float Weight => LPS_Config.MigrationLargeWeight;
 
         protected override REM_MigrationCategory Category => REM_MigrationCategory.Large;
+
+        protected override float DistanceA => 300f;
+        protected override float DistanceB => 400f;
     }
 }

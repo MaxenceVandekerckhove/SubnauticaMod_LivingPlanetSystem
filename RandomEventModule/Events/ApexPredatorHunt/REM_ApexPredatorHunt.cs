@@ -23,12 +23,6 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
         public override bool IsEnabled => LPS_Config.ApexPredatorHuntEnabled;
         public override float Weight => LPS_Config.ApexPredatorHuntWeight;
 
-        // Spawn locator parameters
-
-        private const float SpawnRadiusMin = 300f;
-        private const float SpawnRadiusMax = 600f;
-        private const float VerticalOffsetMax = 65f;
-
         // Execute
 
         protected override IEnumerator Execute()
@@ -53,9 +47,9 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
             Vector3? spawnPos = null;
             yield return REM_SpawnLocator.Find(
                 onCompleted: result => spawnPos = result,
-                spawnRadiusMin: 150f,
-                spawnRadiusMax: 400f,
-                verticalOffsetMax: 80f
+                spawnRadiusMin: 300f,
+                spawnRadiusMax: 600f,
+                verticalOffsetMax: 65f
             );
 
             // 4. Load and instantiate prefab

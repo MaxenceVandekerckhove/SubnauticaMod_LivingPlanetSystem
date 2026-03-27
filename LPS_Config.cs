@@ -194,7 +194,7 @@ namespace LivingPlanetSystem
                 var intervalMinSlider = ModSliderOption.Create(
                     id: "EventIntervalMin",
                     label: "Event Interval Min (minutes)",
-                    minValue: 1f,
+                    minValue: 5f,
                     maxValue: 120f,
                     value: eventIntervalMin.Value,
                     defaultValue: 35f,
@@ -214,7 +214,7 @@ namespace LivingPlanetSystem
                 var intervalMaxSlider = ModSliderOption.Create(
                     id: "EventIntervalMax",
                     label: "Event Interval Max (minutes)",
-                    minValue: 1f,
+                    minValue: 5f,
                     maxValue: 120f,
                     value: eventIntervalMax.Value,
                     defaultValue: 50f,
@@ -252,7 +252,7 @@ namespace LivingPlanetSystem
                     minValue: 0.1f,
                     maxValue: 10f,
                     value: apexPredatorHuntWeight.Value,
-                    defaultValue: 1.0f,
+                    defaultValue: 0.2f,
                     step: 0.1f,
                     valueFormat: "{0:F1}"
                 );
@@ -268,7 +268,7 @@ namespace LivingPlanetSystem
                 // Small migration toggle
                 var smallToggle = ModToggleOption.Create(
                     id: "MigrationSmallEnabled",
-                    label: "Enable Small Migration",
+                    label: "Enable Small Creature Migration",
                     value: migrationSmallEnabled.Value
                 );
 
@@ -283,11 +283,11 @@ namespace LivingPlanetSystem
                 // Small migration weight
                 var smallWeightSlider = ModSliderOption.Create(
                     id: "MigrationSmallWeight",
-                    label: "Small Migration Weight",
+                    label: "Small Migration Creature Weight",
                     minValue: 0.1f,
                     maxValue: 10f,
                     value: migrationSmallWeight.Value,
-                    defaultValue: 1.0f,
+                    defaultValue: 0.3f,
                     step: 0.1f,
                     valueFormat: "{0:F1}"
                 );
@@ -303,7 +303,7 @@ namespace LivingPlanetSystem
                 // Medium migration toggle
                 var mediumToggle = ModToggleOption.Create(
                     id: "MigrationMediumEnabled",
-                    label: "Enable Medium Migration",
+                    label: "Enable Medium Creature Migration",
                     value: migrationMediumEnabled.Value
                 );
 
@@ -318,11 +318,11 @@ namespace LivingPlanetSystem
                 // Medium migration weight
                 var mediumWeightSlider = ModSliderOption.Create(
                     id: "MigrationMediumWeight",
-                    label: "Medium Migration Weight",
+                    label: "Medium Migration Creature Weight",
                     minValue: 0.1f,
                     maxValue: 10f,
                     value: migrationMediumWeight.Value,
-                    defaultValue: 1.0f,
+                    defaultValue: 0.4f,
                     step: 0.1f,
                     valueFormat: "{0:F1}"
                 );
@@ -338,7 +338,7 @@ namespace LivingPlanetSystem
                 // Large migration toggle
                 var largeToggle = ModToggleOption.Create(
                     id: "MigrationLargeEnabled",
-                    label: "Enable Large Migration",
+                    label: "Enable Large Creature Migration",
                     value: migrationLargeEnabled.Value
                 );
 
@@ -353,11 +353,11 @@ namespace LivingPlanetSystem
                 // Large migration weight
                 var largeWeightSlider = ModSliderOption.Create(
                     id: "MigrationLargeWeight",
-                    label: "Large Migration Weight",
+                    label: "Large Migration Creature Weight",
                     minValue: 0.1f,
                     maxValue: 10f,
                     value: migrationLargeWeight.Value,
-                    defaultValue: 1.0f,
+                    defaultValue: 0.1f,
                     step: 0.1f,
                     valueFormat: "{0:F1}"
                 );
@@ -438,23 +438,22 @@ namespace LivingPlanetSystem
             apexPredatorHuntEnabled = config.Bind(
                 section: SectionRandomEvent,
                 key: "ApexPredatorHuntEnabled",
-                defaultValue: false,
+                defaultValue: true,
                 description: "Enable or disable the Apex Predator Hunt event specifically."
             );
 
             apexPredatorHuntWeight = config.Bind(
                 section: SectionRandomEvent,
                 key: "ApexPredatorHuntWeight",
-                defaultValue: 1.0f,
+                defaultValue: 0.2f,
                 description: "Relative weight for the Apex Predator Hunt event during weighted random selection. " +
                              "Higher values make it more likely to be chosen when multiple events are available."
             );
 
-            // Migration events
             migrationSmallEnabled = config.Bind(
                 section: SectionRandomEvent,
                 key: "MigrationSmallEnabled",
-                defaultValue: false,
+                defaultValue: true,
                 description: "Enable or disable the Small Migration event. " +
                              "Spawns a group of 15–20 adults and 5–12 juveniles of a small creature."
             );
@@ -462,14 +461,14 @@ namespace LivingPlanetSystem
             migrationSmallWeight = config.Bind(
                 section: SectionRandomEvent,
                 key: "MigrationSmallWeight",
-                defaultValue: 1.0f,
+                defaultValue: 0.3f,
                 description: "Relative weight for the Small Migration event during weighted random selection."
             );
 
             migrationMediumEnabled = config.Bind(
                 section: SectionRandomEvent,
                 key: "MigrationMediumEnabled",
-                defaultValue: false,
+                defaultValue: true,
                 description: "Enable or disable the Medium Migration event. " +
                              "Spawns a group of 10–15 adults and 2–8 juveniles of a medium creature."
             );
@@ -477,14 +476,14 @@ namespace LivingPlanetSystem
             migrationMediumWeight = config.Bind(
                 section: SectionRandomEvent,
                 key: "MigrationMediumWeight",
-                defaultValue: 1.0f,
+                defaultValue: 0.4f,
                 description: "Relative weight for the Medium Migration event during weighted random selection."
             );
 
             migrationLargeEnabled = config.Bind(
                 section: SectionRandomEvent,
                 key: "MigrationLargeEnabled",
-                defaultValue: false,
+                defaultValue: true,
                 description: "Enable or disable the Large Migration event. " +
                              "Spawns a group of 1–3 adults and 0–3 juveniles of a large creature."
             );
@@ -492,7 +491,7 @@ namespace LivingPlanetSystem
             migrationLargeWeight = config.Bind(
                 section: SectionRandomEvent,
                 key: "MigrationLargeWeight",
-                defaultValue: 1.0f,
+                defaultValue: 0.1f,
                 description: "Relative weight for the Large Migration event during weighted random selection."
             );
 

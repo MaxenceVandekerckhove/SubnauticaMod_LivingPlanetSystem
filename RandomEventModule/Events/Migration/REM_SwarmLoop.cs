@@ -63,7 +63,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
 
         private const float SwimVelocityLarge = 4f;
         private const float SwimVelocityMedium = 4f;
-        private const float SwimVelocitySmall = 4f;
+        private const float SwimVelocitySmall = 2f;
 
         // Public API
 
