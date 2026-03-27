@@ -20,6 +20,13 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
     ///
     /// All disabled behaviours are re-enabled when the loop ends.
     ///
+    /// Player proximity aggro (Medium and Large categories only) :
+    ///   - If the player enters within PlayerAggroRadius of an instance, that instance
+    ///     temporarily leaves the swarm : AggressiveWhenSeeTarget is re-enabled and
+    ///     SwimTo is no longer called on it.
+    ///   - After AgroReturnDelay seconds AND once the player has moved beyond
+    ///     PlayerAggroRadius, the instance rejoins the swarm and resumes its migration.
+    ///
     /// The loop ends when :
     ///   - All instances have arrived within ArrivalRadius of the destination.
     ///   - The global timeout is reached.
@@ -40,11 +47,17 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
         // Maximum duration of the migration in seconds before all instances are released.
         private const float SwarmTimeout = 300f;
 
-        /// Interval between SwimTo calls.
+        // Interval between SwimTo calls.
         private const float SwimRefreshInterval = 0.1f;
 
-        /// Scale multiplier applied to juvenile instances.
+        // Scale multiplier applied to juvenile instances.
         private const float JuvenileScaleMultiplier = 0.45f;
+
+        // Distance at which a Medium/Large creature temporarily breaks off to attack the player.
+        private const float PlayerAggroRadius = 15f;
+
+        // Time in seconds an agro instance must wait before being eligible to rejoin the swarm.
+        private const float AgroReturnDelay = 10f;
 
         // Swim velocity per category
 
@@ -62,6 +75,8 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
             REM_MigrationCategory category)
         {
             float swimVelocity = GetSwimVelocity(category);
+            bool supportsAggro = category == REM_MigrationCategory.Medium ||
+                                  category == REM_MigrationCategory.Large;
 
             // Apply juvenile scale once at start
             ApplyJuvenileScale(juvenileInstances);
@@ -74,6 +89,9 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
             foreach (GameObject instance in allInstances)
                 DisableMigrationInterferingBehaviours(instance);
 
+            // Tracks instances that have temporarily broken off to attack the player.
+            Dictionary<GameObject, float> agroInstances = new Dictionary<GameObject, float>();
+
             Plugin.Log.LogInfo($"[REM_SwarmLoop] Migration started : " +
                                $"{adultInstances.Count} adult(s), " +
                                $"{juvenileInstances.Count} juvenile(s). " +
@@ -84,10 +102,13 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
             float elapsed = 0f;
             float refreshTimer = 0f;
 
+            GameObject player = Player.main != null ? Player.main.gameObject : null;
+
             while (elapsed < SwarmTimeout)
             {
                 // Remove destroyed instances silently
                 allInstances.RemoveAll(i => i == null);
+                RemoveNullKeys(agroInstances);
 
                 if (allInstances.Count == 0)
                 {
@@ -102,12 +123,54 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
                     yield break;
                 }
 
-                // Refresh SwimTo at an interval that guarantees the previous
+                // Player proximity aggro (Medium / Large only)
+                if (supportsAggro && player != null)
+                {
+                    Vector3 playerPos = player.transform.position;
+
+                    foreach (GameObject instance in allInstances)
+                    {
+                        if (instance == null)
+                            continue;
+
+                        float dist = Vector3.Distance(instance.transform.position, playerPos);
+
+                        if (!agroInstances.ContainsKey(instance))
+                        {
+                            // Instance is currently in the swarm — check if player is too close
+                            if (dist <= PlayerAggroRadius)
+                            {
+                                EnterAgroMode(instance);
+                                agroInstances[instance] = 0f;
+
+                                Plugin.Log.LogDebug($"[REM_SwarmLoop] {instance.name} broke off to attack player " +
+                                                    $"(distance={dist:F1}m).");
+                            }
+                        }
+                        else
+                        {
+                            // Instance is in aggro mode — increment its timer
+                            agroInstances[instance] += Time.deltaTime;
+
+                            // Rejoin swarm once the delay has elapsed AND the player is far enough
+                            if (agroInstances[instance] >= AgroReturnDelay && dist > PlayerAggroRadius)
+                            {
+                                agroInstances.Remove(instance);
+                                ExitAgroMode(instance);
+
+                                Plugin.Log.LogDebug($"[REM_SwarmLoop] {instance.name} rejoined swarm " +
+                                                    $"after {AgroReturnDelay}s (distance={dist:F1}m).");
+                            }
+                        }
+                    }
+                }
+
+                // SwimTo refresh
                 refreshTimer += Time.deltaTime;
                 if (refreshTimer >= SwimRefreshInterval)
                 {
                     refreshTimer = 0f;
-                    RefreshSwimTo(allInstances, destination, swimVelocity);
+                    RefreshSwimTo(allInstances, agroInstances, destination, swimVelocity);
                 }
 
                 elapsed += Time.deltaTime;
@@ -165,12 +228,19 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
             return true;
         }
 
-        // Calls SwimTo on each surviving instance with a full 3D direction toward the destination.
-        private static void RefreshSwimTo(List<GameObject> instances, Vector3 destination, float velocity)
+        // Calls SwimTo on each surviving instance that is NOT currently in aggro mode.
+        private static void RefreshSwimTo(List<GameObject> instances,
+                                          Dictionary<GameObject, float> agroInstances,
+                                          Vector3 destination,
+                                          float velocity)
         {
             foreach (GameObject instance in instances)
             {
                 if (instance == null)
+                    continue;
+
+                // Skip instances that have broken off to attack the player
+                if (agroInstances.ContainsKey(instance))
                     continue;
 
                 SwimBehaviour swimBehaviour = instance.GetComponent<SwimBehaviour>();
@@ -180,7 +250,6 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
 
                 try
                 {
-                    // Compute full 3D direction including Y component
                     Vector3 direction = (destination - instance.transform.position).normalized;
                     swimBehaviour.SwimTo(destination, direction, velocity);
                 }
@@ -189,6 +258,26 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
                     Plugin.Log.LogWarning($"[REM_SwarmLoop] SwimTo failed on {instance.name} : {e.Message}");
                 }
             }
+        }
+
+        // Re-enables AggressiveWhenSeeTarget so the creature can attack the player.
+        private static void EnterAgroMode(GameObject instance)
+        {
+            if (instance == null)
+                return;
+
+            foreach (AggressiveWhenSeeTarget c in instance.GetComponentsInChildren<AggressiveWhenSeeTarget>(includeInactive: true))
+                c.enabled = true;
+        }
+
+        // Disables AggressiveWhenSeeTarget again so the creature resumes its migration.
+        private static void ExitAgroMode(GameObject instance)
+        {
+            if (instance == null)
+                return;
+
+            foreach (AggressiveWhenSeeTarget c in instance.GetComponentsInChildren<AggressiveWhenSeeTarget>(includeInactive: true))
+                c.enabled = false;
         }
 
         // Disables all behaviours that could interfere with migration movement.
@@ -244,6 +333,21 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
 
                 Plugin.Log.LogDebug($"[REM_SwarmLoop] {instance.name} released to vanilla AI.");
             }
+        }
+
+        // Removes null keys from the agro tracking dictionary (destroyed instances).
+        private static void RemoveNullKeys(Dictionary<GameObject, float> dict)
+        {
+            var toRemove = new List<GameObject>();
+
+            foreach (GameObject key in dict.Keys)
+            {
+                if (key == null)
+                    toRemove.Add(key);
+            }
+
+            foreach (GameObject key in toRemove)
+                dict.Remove(key);
         }
     }
 }
