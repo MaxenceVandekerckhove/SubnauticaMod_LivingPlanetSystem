@@ -93,6 +93,7 @@
     <Compile Include="RandomEventModule\REM_EventBase.cs" />
     <Compile Include="RandomEventModule\REM_EventRegistry.cs" />
     <Compile Include="RandomEventModule\REM_EventTimer.cs" />
+    <Compile Include="RandomEventModule\REM_PDAAlert.cs" />
     <Compile Include="RandomSpawnerModule\RMS_BiomeRegistry.cs" />
     <Compile Include="RandomSpawnerModule\RSM_BiomeClassifier.cs" />
     <Compile Include="RandomSpawnerModule\RSM_CreatureCache.cs" />

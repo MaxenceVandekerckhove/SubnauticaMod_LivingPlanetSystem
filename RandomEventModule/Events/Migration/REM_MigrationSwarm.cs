@@ -113,6 +113,9 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
 
             yield return null;
 
+            // PDA alert for player
+            REM_PDAAlert.Show(REM_PDAAlert.ForMigration(Category));
+
             // 5. Hand off to swarm loop
             yield return REM_SwarmLoop.Run(adults, juveniles, path.DestinationPosition, Category);
 

@@ -77,8 +77,12 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
 
             Plugin.Log.LogInfo($"[REM_ApexPredatorHunt] {chosen} spawned at {spawnPos.Value}.");
 
+            // PDA alert for player
+            REM_PDAAlert.Show(REM_PDAAlert.ForApexPredatorHunt());
+
             // 5. Hand off to hunt loop
             yield return REM_HuntLoop.Run(instance);
+
         }
     }
 }
