@@ -1,4 +1,6 @@
-﻿using LivingPlanetSystem.RandomEventModule.Events.Migration;
+﻿using FMODUnity;
+using LivingPlanetSystem.Core;
+using LivingPlanetSystem.RandomEventModule.Events.Migration;
 using UnityEngine;
 
 namespace LivingPlanetSystem.RandomEventModule
@@ -6,6 +8,7 @@ namespace LivingPlanetSystem.RandomEventModule
     /// <summary>
     /// Global utility for displaying PDA alert notifications during random events.
     /// Each event constructs its message via a dedicated static factory method.
+    /// Plays a custom FMOD sound event alongside each alert if the audio banks are loaded.
     /// </summary>
     public static class REM_PDAAlert
     {
@@ -23,16 +26,21 @@ namespace LivingPlanetSystem.RandomEventModule
             // How long the message stays on screen
             public float Duration;
 
-            public AlertMessage(string text, float duration = DefaultDuration)
+            // FMOD event path to play alongside the alert — empty means no sound
+            public string SoundEvent;
+
+            public AlertMessage(string text, float duration = DefaultDuration,
+                                string soundEvent = "")
             {
                 Text = text;
                 Duration = duration;
+                SoundEvent = soundEvent;
             }
         }
 
         // Display
 
-        /// Displays the given alert message in-game via ErrorMessage
+        // Displays the given alert message in-game via ErrorMessage and plays its associated FMOD sound event if available.
         public static void Show(AlertMessage message)
         {
             if (string.IsNullOrEmpty(message.Text))
@@ -46,6 +54,9 @@ namespace LivingPlanetSystem.RandomEventModule
             try
             {
                 ErrorMessage.AddError(message.Text);
+
+                if (!string.IsNullOrEmpty(message.SoundEvent))
+                    LPS_AudioManager.PlaySound(message.SoundEvent);
             }
             catch (System.Exception e)
             {
@@ -60,11 +71,12 @@ namespace LivingPlanetSystem.RandomEventModule
         {
             return new AlertMessage(
                 "Biological threat detected. A large predator is approaching your position.",
-                duration: 7f
+                duration: 7f,
+                soundEvent: LPS_AudioManager.SoundApexPredatorAlert
             );
         }
 
-        // Alert for a Migration event, with message tailored to the creature category.
+        // Alert for a Migration event, with message and sound tailored to the creature category.
         public static AlertMessage ForMigration(REM_MigrationCategory category)
         {
             switch (category)
@@ -72,19 +84,22 @@ namespace LivingPlanetSystem.RandomEventModule
                 case REM_MigrationCategory.Small:
                     return new AlertMessage(
                         "Migration detected. A school of small organisms is passing through the area.",
-                        duration: 6f
+                        duration: 6f,
+                        soundEvent: LPS_AudioManager.SoundMigrationSmallAlert
                     );
 
                 case REM_MigrationCategory.Medium:
                     return new AlertMessage(
                         "Migration detected. A group of medium-sized creatures is moving through the area.",
-                        duration: 6f
+                        duration: 6f,
+                        soundEvent: LPS_AudioManager.SoundMigrationMediumAlert
                     );
 
                 case REM_MigrationCategory.Large:
                     return new AlertMessage(
                         "Migration detected. Large organisms are moving through the area. Maintain safe distance.",
-                        duration: 8f
+                        duration: 8f,
+                        soundEvent: LPS_AudioManager.SoundMigrationLargeAlert
                     );
 
                 default:

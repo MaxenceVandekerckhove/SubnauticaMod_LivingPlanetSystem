@@ -49,7 +49,8 @@ namespace LivingPlanetSystem
             "LostOculusJuvenile",
             "VoidMouth",
             "MultiGarg",
-            "school"
+            "school",
+            "Rockgrub"
         };
 
         // Config entries — RSM
@@ -424,14 +425,14 @@ namespace LivingPlanetSystem
             eventIntervalMin = config.Bind(
                 section: SectionRandomEvent,
                 key: "EventIntervalMin",
-                defaultValue: 35f,
+                defaultValue: 20f,
                 description: "Minimum time in minutes between random events. Acceptable range: 5 to 120."
             );
 
             eventIntervalMax = config.Bind(
                 section: SectionRandomEvent,
                 key: "EventIntervalMax",
-                defaultValue: 50f,
+                defaultValue: 35f,
                 description: "Maximum time in minutes between random events. Acceptable range: 5 to 120."
             );
 
