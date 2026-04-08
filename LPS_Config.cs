@@ -50,7 +50,10 @@ namespace LivingPlanetSystem
             "VoidMouth",
             "MultiGarg",
             "school",
-            "Rockgrub"
+            "Rockgrub",
+            "Kinematic",
+            "Precursor",
+            "Crash"
         };
 
         // Config entries — RSM
