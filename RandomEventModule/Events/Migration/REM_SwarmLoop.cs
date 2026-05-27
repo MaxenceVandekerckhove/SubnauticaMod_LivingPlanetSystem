@@ -59,6 +59,9 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
         // Time in seconds an agro instance must wait before being eligible to rejoin the swarm.
         private const float AgroReturnDelay = 10f;
 
+        // Time in seconds after which a creature is despawned if the config option is enabled (after arriving or being released to vanilla AI).
+        private const float DespawnDelay = 60f;
+
         // Swim velocity per category
 
         private const float SwimVelocityLarge = 4f;
@@ -119,7 +122,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
                 if (AllArrived(allInstances, destination))
                 {
                     Plugin.Log.LogInfo("[REM_SwarmLoop] All instances reached destination : releasing to vanilla AI.");
-                    ReleaseAll(allInstances);
+                    yield return ReleaseOrDespawn(allInstances);
                     yield break;
                 }
 
@@ -182,7 +185,7 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
                                $"releasing {allInstances.Count} surviving instance(s) to vanilla AI.");
 
             allInstances.RemoveAll(i => i == null);
-            ReleaseAll(allInstances);
+            yield return ReleaseOrDespawn(allInstances);
         }
 
         // Private helpers
@@ -348,6 +351,34 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
 
             foreach (GameObject key in toRemove)
                 dict.Remove(key);
+        }
+
+        // Depending on config, either re-enables vanilla AI or despawns the instances after arrival/timeout.
+        private static IEnumerator ReleaseOrDespawn(List<GameObject> instances)
+        {
+            if (!LPS_Config.DespawnAfterEvent)
+            {
+                ReleaseAll(instances);
+                yield break;
+            }
+
+            Plugin.Log.LogInfo($"[REM_SwarmLoop] DespawnAfterEvent enabled : " +
+                               $"despawning {instances.Count} instance(s) in {DespawnDelay}s.");
+
+            float elapsed = 0f;
+            while (elapsed < DespawnDelay)
+            {
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            foreach (GameObject instance in instances)
+            {
+                if (instance != null)
+                    UnityEngine.Object.Destroy(instance);
+            }
+
+            Plugin.Log.LogInfo("[REM_SwarmLoop] Instances despawned.");
         }
     }
 }

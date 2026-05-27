@@ -69,14 +69,14 @@ namespace LivingPlanetSystem
         // Config entries — REM
 
         private static ConfigEntry<bool> randomEventEnabled;
+        private static ConfigEntry<bool> pdaVoiceEnabled;
+        private static ConfigEntry<bool> despawnAfterEvent;
+
         private static ConfigEntry<float> eventIntervalMin;
         private static ConfigEntry<float> eventIntervalMax;
+
         private static ConfigEntry<bool> apexPredatorHuntEnabled;
         private static ConfigEntry<float> apexPredatorHuntWeight;
-
-        // Config entries — Migration
-
-        private static ConfigEntry<bool> pdaVoiceEnabled;
         private static ConfigEntry<bool> migrationSmallEnabled;
         private static ConfigEntry<float> migrationSmallWeight;
         private static ConfigEntry<bool> migrationMediumEnabled;
@@ -194,6 +194,21 @@ namespace LivingPlanetSystem
                 };
 
                 AddItem(enableToggle);
+
+                // Despawn after event toggle
+                var despawnToggle = ModToggleOption.Create(
+                    id: "DespawnAfterEvent",
+                    label: "Despawn Creatures After Event",
+                    value: despawnAfterEvent.Value
+                );
+
+                despawnToggle.OnChanged += (_, args) =>
+                {
+                    despawnAfterEvent.Value = args.Value;
+                    Plugin.Log.LogInfo($"[LPS_Config] DespawnAfterEvent updated : {despawnAfterEvent.Value}");
+                };
+
+                AddItem(despawnToggle);
 
                 // PDA voice toggle
                 var pdaVoiceToggle = ModToggleOption.Create(
@@ -434,6 +449,13 @@ namespace LivingPlanetSystem
             );
 
             // REM — Random Event
+            randomEventEnabled = config.Bind(
+                section: SectionRandomEvent,
+                key: "RandomEventEnabled",
+                defaultValue: false,
+                description: "Enable or disable the Random Event module entirely."
+            );
+
             pdaVoiceEnabled = config.Bind(
                 section: SectionRandomEvent,
                 key: "PDAVoiceEnabled",
@@ -441,11 +463,12 @@ namespace LivingPlanetSystem
                 description: "Enable or disable the PDA voice sound played when random event occurs."
             );
 
-            randomEventEnabled = config.Bind(
+            despawnAfterEvent = config.Bind(
                 section: SectionRandomEvent,
-                key: "RandomEventEnabled",
-                defaultValue: false,
-                description: "Enable or disable the Random Event module entirely."
+                key: "DespawnAfterEvent",
+                defaultValue: true,
+                description: "If enabled, creatures spawned during a random event will despawn " +
+                             "one minute after the event ends instead of being released to vanilla AI."
             );
 
             eventIntervalMin = config.Bind(
@@ -553,6 +576,7 @@ namespace LivingPlanetSystem
 
         // Public properties — REM
         public static bool RandomEventEnabled => randomEventEnabled.Value;
+        public static bool DespawnAfterEvent => despawnAfterEvent.Value;
         public static bool PDAVoiceEnabled => pdaVoiceEnabled.Value;
         public static float EventIntervalMin => eventIntervalMin.Value;
         public static float EventIntervalMax => eventIntervalMax.Value;

@@ -28,6 +28,9 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
         // Interval in seconds between aggro refresh calls.
         private const float AggroRefreshInterval = 0.1f;
 
+        // Time in seconds after which a creature is despawned if the config option is enabled (after arriving or being released to vanilla AI).
+        private const float DespawnDelay = 60f;
+
         // Public API
 
         // Starts the hunt loop for the given predator instance.
@@ -73,7 +76,15 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
                 {
                     Plugin.Log.LogInfo($"[REM_HuntLoop] Predator reached the player (dist={dist:F1}m) : " +
                                        $"releasing to vanilla AI.");
-                    RestoreWanderBehaviours(instance);
+
+                    if (LPS_Config.DespawnAfterEvent)
+                    {
+                        yield return DespawnAfterDelay(instance);
+                    }
+                    else
+                    {
+                        RestoreWanderBehaviours(instance);
+                    }
                     yield break;
                 }
 
@@ -188,6 +199,28 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
                 c.enabled = true;
 
             Plugin.Log.LogDebug($"[REM_HuntLoop] Wander behaviours restored on {instance.name}.");
+        }
+
+        // Despawns the creature after a delay, if the config option is enabled.
+        private static IEnumerator DespawnAfterDelay(GameObject instance)
+        {
+            Plugin.Log.LogInfo($"[REM_HuntLoop] DespawnAfterEvent enabled : " +
+                               $"despawning predator in {DespawnDelay}s.");
+
+            float elapsed = 0f;
+            while (elapsed < DespawnDelay)
+            {
+                if (instance == null)
+                    yield break;
+
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            if (instance != null)
+                UnityEngine.Object.Destroy(instance);
+
+            Plugin.Log.LogInfo("[REM_HuntLoop] Predator despawned.");
         }
     }
 }
