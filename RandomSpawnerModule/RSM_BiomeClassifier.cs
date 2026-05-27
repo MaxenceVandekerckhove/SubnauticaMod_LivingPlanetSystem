@@ -92,15 +92,15 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 
             isInitialized = true;
 
-            // Log restricted biomes
-            // Plugin.Log.LogInfo("[RSM_BiomeClassifier] Restricted biomes :");
-            // foreach (BiomeType biome in restrictedBiomes)
-            //    Plugin.Log.LogInfo($"[RSM_BiomeClassifier]   RESTRICTED   | {biome}");
+            //Log restricted biomes
+            Plugin.Log.LogInfo("[RSM_BiomeClassifier] Restricted biomes :");
+            foreach (BiomeType biome in restrictedBiomes)
+                Plugin.Log.LogInfo($"[RSM_BiomeClassifier]   RESTRICTED   | {biome}");
 
             // Log unrestricted biomes
-            // Plugin.Log.LogInfo("[RSM_BiomeClassifier] Unrestricted biomes :");
-            // foreach (BiomeType biome in unrestrictedBiomes)
-            //    Plugin.Log.LogInfo($"[RSM_BiomeClassifier]   UNRESTRICTED | {biome}");
+            Plugin.Log.LogInfo("[RSM_BiomeClassifier] Unrestricted biomes :");
+            foreach (BiomeType biome in unrestrictedBiomes)
+              Plugin.Log.LogInfo($"[RSM_BiomeClassifier]   UNRESTRICTED | {biome}");
         }
 
         /// Returns the appropriate biome list for a creature based on its magnitude.

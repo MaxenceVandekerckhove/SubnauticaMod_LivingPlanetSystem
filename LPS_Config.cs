@@ -76,6 +76,7 @@ namespace LivingPlanetSystem
 
         // Config entries — Migration
 
+        private static ConfigEntry<bool> pdaVoiceEnabled;
         private static ConfigEntry<bool> migrationSmallEnabled;
         private static ConfigEntry<float> migrationSmallWeight;
         private static ConfigEntry<bool> migrationMediumEnabled;
@@ -193,6 +194,21 @@ namespace LivingPlanetSystem
                 };
 
                 AddItem(enableToggle);
+
+                // PDA voice toggle
+                var pdaVoiceToggle = ModToggleOption.Create(
+                    id: "PDAVoiceEnabled",
+                    label: "Enable PDA Voice Alerts",
+                    value: pdaVoiceEnabled.Value
+                );
+
+                pdaVoiceToggle.OnChanged += (_, args) =>
+                {
+                    pdaVoiceEnabled.Value = args.Value;
+                    Plugin.Log.LogInfo($"[LPS_Config] PDAVoiceEnabled updated : {pdaVoiceEnabled.Value}");
+                };
+
+                AddItem(pdaVoiceToggle);
 
                 // Interval min
                 var intervalMinSlider = ModSliderOption.Create(
@@ -418,6 +434,13 @@ namespace LivingPlanetSystem
             );
 
             // REM — Random Event
+            pdaVoiceEnabled = config.Bind(
+                section: SectionRandomEvent,
+                key: "PDAVoiceEnabled",
+                defaultValue: true,
+                description: "Enable or disable the PDA voice sound played when random event occurs."
+            );
+
             randomEventEnabled = config.Bind(
                 section: SectionRandomEvent,
                 key: "RandomEventEnabled",
@@ -509,7 +532,8 @@ namespace LivingPlanetSystem
             Plugin.Log.LogInfo($"[LPS_Config] SizeVariation : Enabled={SizeVariationEnabled} " +
                                $"Min={SizeVariationMin} Max={SizeVariationMax}");
             Plugin.Log.LogInfo($"[LPS_Config] RandomEvent : Enabled={RandomEventEnabled} " +
-                               $"Interval=[{EventIntervalMin}-{EventIntervalMax}] min");
+                               $"Interval=[{EventIntervalMin}-{EventIntervalMax}] min " +
+                               $"PDAVoice={PDAVoiceEnabled}");
             Plugin.Log.LogInfo($"[LPS_Config] ApexPredatorHunt : Enabled={ApexPredatorHuntEnabled} " +
                                $"Weight={ApexPredatorHuntWeight}");
             Plugin.Log.LogInfo($"[LPS_Config] Migration : " +
@@ -529,6 +553,7 @@ namespace LivingPlanetSystem
 
         // Public properties — REM
         public static bool RandomEventEnabled => randomEventEnabled.Value;
+        public static bool PDAVoiceEnabled => pdaVoiceEnabled.Value;
         public static float EventIntervalMin => eventIntervalMin.Value;
         public static float EventIntervalMax => eventIntervalMax.Value;
         public static bool ApexPredatorHuntEnabled => apexPredatorHuntEnabled.Value;

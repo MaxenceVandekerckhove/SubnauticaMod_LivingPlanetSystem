@@ -55,7 +55,7 @@ namespace LivingPlanetSystem.RandomEventModule
             {
                 ErrorMessage.AddError(message.Text);
 
-                if (!string.IsNullOrEmpty(message.SoundEvent))
+                if (!string.IsNullOrEmpty(message.SoundEvent) && LPS_Config.PDAVoiceEnabled)
                     LPS_AudioManager.PlaySound(message.SoundEvent);
             }
             catch (System.Exception e)
