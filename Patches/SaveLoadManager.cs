@@ -9,7 +9,7 @@ namespace LivingPlanetSystem.Patches
         [HarmonyPrefix]
         public static void Prefix(string slotName)
         {
-            Plugin.Log.LogInfo($"[Plugin] Save slot '{slotName}' deleted : cleaning seed.");
+            Plugin.Log.LogInfo($"[Plugin] Save slot '{slotName}' deleted : cleaning seed and safe zone.");
             LPS_SeedManager.DeleteSeedForSlot(slotName);
         }
     }

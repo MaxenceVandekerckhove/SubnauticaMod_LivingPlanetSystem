@@ -105,6 +105,8 @@
     <Compile Include="RandomSpawnerModule\RSM_CreatureCache.cs" />
     <Compile Include="RandomSpawnerModule\RSM_CreatureFilter.cs" />
     <Compile Include="RandomSpawnerModule\RSM_CreatureRegistry.cs" />
+    <Compile Include="RandomSpawnerModule\RSM_SafeZone.cs" />
+    <Compile Include="RandomSpawnerModule\RSM_SafeZoneGuard.cs" />
     <Compile Include="RandomSpawnerModule\RSM_SpawnManager.cs" />
     <Compile Include="SizeVariationModule\SVM_CreatureScale.cs" />
   </ItemGroup>

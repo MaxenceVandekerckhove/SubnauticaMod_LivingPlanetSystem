@@ -60,6 +60,9 @@ namespace LivingPlanetSystem
 
         private static ConfigEntry<float> spawnMultiplier;
 
+        private static ConfigEntry<bool> safeZoneEnabled;
+        private static ConfigEntry<float> safeZoneRadius;
+
         // Config entries — SVM
 
         private static ConfigEntry<bool> sizeVariationEnabled;
@@ -113,6 +116,37 @@ namespace LivingPlanetSystem
                 };
 
                 AddItem(spawnSlider);
+
+                // SafeZone toggle
+                var safeZoneToggle = ModToggleOption.Create(
+                    id: "SafeZoneEnabled",
+                    label: "Enable Spawn Safe Zone",
+                    value: safeZoneEnabled.Value
+                );
+                safeZoneToggle.OnChanged += (_, args) =>
+                {
+                    safeZoneEnabled.Value = args.Value;
+                    Plugin.Log.LogInfo($"[LPS_Config] SafeZoneEnabled updated : {safeZoneEnabled.Value}");
+                };
+                AddItem(safeZoneToggle);
+
+                // SafeZone radius slider
+                var safeZoneSlider = ModSliderOption.Create(
+                    id: "SafeZoneRadius",
+                    label: "Safe Zone Radius (metres)",
+                    minValue: 50f,
+                    maxValue: 300f,
+                    value: safeZoneRadius.Value,
+                    defaultValue: 150f,
+                    step: 10f,
+                    valueFormat: "{0:F0} m"
+                );
+                safeZoneSlider.OnChanged += (_, args) =>
+                {
+                    safeZoneRadius.Value = args.Value;
+                    Plugin.Log.LogInfo($"[LPS_Config] SafeZoneRadius updated : {safeZoneRadius.Value}");
+                };
+                AddItem(safeZoneSlider);
             }
         }
 
@@ -422,6 +456,20 @@ namespace LivingPlanetSystem
                              "1.0 = default rates | 0.1 = very rare | 10.0 = very frequent. " +
                              "Acceptable range: 0.1 to 10.0"
             );
+            safeZoneEnabled = config.Bind(
+                section: SectionSpawn,
+                key: "SafeZoneEnabled",
+                defaultValue: false,
+                description: "When enabled, no creatures will be spawned by RSM within SafeZoneRadius " +
+                             "metres of the player's initial spawn position."
+            );
+            safeZoneRadius = config.Bind(
+                section: SectionSpawn,
+                key: "SafeZoneRadius",
+                defaultValue: 150f,
+                description: "Radius in metres of the spawn-free zone around the player's spawn point. " +
+                             "Acceptable range: 50 to 300."
+            );
 
             // SVM - Size Variation
             sizeVariationEnabled = config.Bind(
@@ -552,6 +600,7 @@ namespace LivingPlanetSystem
             InitializeBlacklist();
 
             Plugin.Log.LogInfo($"[LPS_Config] Configuration loaded : SpawnMultiplier={SpawnMultiplier}");
+            Plugin.Log.LogInfo($"[LPS_Config] SafeZone : Enabled={SafeZoneEnabled} Radius={SafeZoneRadius}m");
             Plugin.Log.LogInfo($"[LPS_Config] SizeVariation : Enabled={SizeVariationEnabled} " +
                                $"Min={SizeVariationMin} Max={SizeVariationMax}");
             Plugin.Log.LogInfo($"[LPS_Config] RandomEvent : Enabled={RandomEventEnabled} " +
@@ -568,6 +617,8 @@ namespace LivingPlanetSystem
 
         // Public properties — RSM
         public static float SpawnMultiplier => spawnMultiplier.Value;
+        public static bool SafeZoneEnabled => safeZoneEnabled.Value;
+        public static float SafeZoneRadius => safeZoneRadius.Value;
 
         // Public properties — SVM
         public static bool SizeVariationEnabled => sizeVariationEnabled.Value;

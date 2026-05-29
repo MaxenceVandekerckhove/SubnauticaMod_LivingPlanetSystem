@@ -72,8 +72,9 @@ namespace LivingPlanetSystem
         {
             Plugin.Log.LogInfo("[Plugin] Main menu detected : initializing RSM systems.");
 
-            // Stop any active REM timer from a previous session
+            // Stop any ongoing random events and clear safe zone state when returning to main menu
             REM_EventTimer.Stop();
+            RSM_SafeZone.Clear();
 
             // Step 1 : initialize biome registry
             RSM_BiomeRegistry.Initialize();
