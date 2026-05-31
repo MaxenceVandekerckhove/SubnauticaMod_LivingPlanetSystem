@@ -356,11 +356,11 @@ namespace LivingPlanetSystem.RandomEventModule.Events.Migration
         // Depending on config, either re-enables vanilla AI or despawns the instances after arrival/timeout.
         private static IEnumerator ReleaseOrDespawn(List<GameObject> instances)
         {
+            // Toujours mettre à jour le leashPosition et réactiver les behaviours
+            ReleaseAll(instances);
+
             if (!LPS_Config.DespawnAfterEvent)
-            {
-                ReleaseAll(instances);
                 yield break;
-            }
 
             Plugin.Log.LogInfo($"[REM_SwarmLoop] DespawnAfterEvent enabled : " +
                                $"despawning {instances.Count} instance(s) in {DespawnDelay}s.");

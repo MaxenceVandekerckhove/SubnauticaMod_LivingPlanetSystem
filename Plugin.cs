@@ -17,7 +17,7 @@ namespace LivingPlanetSystem
         // Constants
         private const string MyGuid = "com.CaporalCross.LivingPlanetSystem";
         private const string PluginName = "LivingPlanetSystem";
-        private const string Version = "1.0.0";
+        private const string Version = "1.3.0";
 
         // Public static logger (accessible from all classes)
         public static ManualLogSource Log;

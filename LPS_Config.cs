@@ -53,7 +53,8 @@ namespace LivingPlanetSystem
             "Rockgrub",
             "Kinematic",
             "Precursor",
-            "Crash"
+            "Crash",
+            "PodshellLeviathanBaby"
         };
 
         // Config entries — RSM
@@ -543,7 +544,7 @@ namespace LivingPlanetSystem
             despawnAfterEvent = config.Bind(
                 section: SectionRandomEvent,
                 key: "DespawnAfterEvent",
-                defaultValue: true,
+                defaultValue: false,
                 description: "If enabled, creatures spawned during a random event will despawn " +
                              "one minute after the event ends instead of being released to vanilla AI."
             );

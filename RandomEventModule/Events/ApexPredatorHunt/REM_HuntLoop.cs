@@ -204,6 +204,8 @@ namespace LivingPlanetSystem.RandomEventModule.Events.ApexPredatorHunt
         // Despawns the creature after a delay, if the config option is enabled.
         private static IEnumerator DespawnAfterDelay(GameObject instance)
         {
+            RestoreWanderBehaviours(instance);
+
             Plugin.Log.LogInfo($"[REM_HuntLoop] DespawnAfterEvent enabled : " +
                                $"despawning predator in {DespawnDelay}s.");
 

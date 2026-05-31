@@ -132,6 +132,26 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                     }
                 }
 
+                // Inject manual entries — modded creatures registered too late for the scan
+                var manualEntries = RSM_ManualCreatureRegistry.GetEntries();
+                foreach (var (techType, magnitude) in manualEntries)
+                {
+                    bool alreadyPresent = false;
+                    foreach (var existing in result)
+                    {
+                        if (existing.techType == techType)
+                        {
+                            alreadyPresent = true;
+                            break;
+                        }
+                    }
+
+                    if (!alreadyPresent)
+                        result.Add((techType, magnitude));
+                    else
+                        Plugin.Log.LogWarning($"[RSM_CreatureCache] Manual entry {techType} already in cache : skipping.");
+                }
+
                 Plugin.Log.LogInfo($"[RSM_CreatureCache] Cache loaded : {result.Count} creatures.");
             }
             catch (Exception e)
@@ -161,7 +181,9 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                 entries.Add($"{plugin.Metadata.GUID}@{plugin.Metadata.Version}");
 
             entries.Sort();
-            return string.Join("|", entries) + $"|keywords:{LPS_Config.ExcludedKeywordsFingerprint}";
+            return string.Join("|", entries)
+                + $"|keywords:{LPS_Config.ExcludedKeywordsFingerprint}"
+                + $"|manual:{RSM_ManualCreatureRegistry.Fingerprint()}";
         }
     }
 }
