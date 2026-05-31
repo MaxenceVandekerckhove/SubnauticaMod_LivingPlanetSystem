@@ -22,7 +22,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 
         // Cache data structures
 
-        /// Represents a single creature entry in the cache.
+        // Represents a single creature entry in the cache.
         public class CreatureEntry
         {
             // TechType name of the creature
@@ -32,7 +32,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             public float Magnitude { get; set; } = 0f;
         }
 
-        /// Full cache data structure stored in the JSON file.
+        // Full cache data structure stored in the JSON file.
         private class CacheData
         {
             // Mod fingerprint : pipe-separated list of "GUID@version" for all active plugins
@@ -44,7 +44,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 
         // Public API
 
-        /// Checks whether a valid cache exists for the current mod configuration.
+        // Checks whether a valid cache exists for the current mod configuration.
         public static bool IsCacheValid()
         {
             if (!File.Exists(CacheFilePath))
@@ -76,7 +76,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             }
         }
 
-        /// Saves the given list of creatures and their magnitudes to the cache file.
+        // Saves the given list of creatures and their magnitudes to the cache file.
         public static void SaveCache(List<(TechType techType, float magnitude)> creatures)
         {
             try
@@ -109,8 +109,8 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             }
         }
 
-        /// Loads the creature list from the cache file.
-        /// Returns an empty list if the file cannot be read.
+        // Loads the creature list from the cache file.
+        // Returns an empty list if the file cannot be read.
         public static List<(TechType techType, float magnitude)> LoadCache()
         {
             var result = new List<(TechType techType, float magnitude)>();
@@ -132,26 +132,6 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                     }
                 }
 
-                // Inject manual entries — modded creatures registered too late for the scan
-                var manualEntries = RSM_ManualCreatureRegistry.GetEntries();
-                foreach (var (techType, magnitude) in manualEntries)
-                {
-                    bool alreadyPresent = false;
-                    foreach (var existing in result)
-                    {
-                        if (existing.techType == techType)
-                        {
-                            alreadyPresent = true;
-                            break;
-                        }
-                    }
-
-                    if (!alreadyPresent)
-                        result.Add((techType, magnitude));
-                    else
-                        Plugin.Log.LogWarning($"[RSM_CreatureCache] Manual entry {techType} already in cache : skipping.");
-                }
-
                 Plugin.Log.LogInfo($"[RSM_CreatureCache] Cache loaded : {result.Count} creatures.");
             }
             catch (Exception e)
@@ -162,6 +142,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             return result;
         }
 
+
         // Private helpers
 
         /// Reads and deserializes the cache file from disk.
@@ -171,8 +152,8 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             return JsonConvert.DeserializeObject<CacheData>(json) ?? new CacheData();
         }
 
-        /// Builds a fingerprint string based on all currently loaded BepInEx plugins.
-        /// Includes both GUID and version so the cache is invalidated on mod updates.
+        // Builds a fingerprint string based on all currently loaded BepInEx plugins.
+        // Includes both GUID and version so the cache is invalidated on mod updates.
         private static string BuildFingerprint()
         {
             List<string> entries = new List<string>();
@@ -182,8 +163,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 
             entries.Sort();
             return string.Join("|", entries)
-                + $"|keywords:{LPS_Config.ExcludedKeywordsFingerprint}"
-                + $"|manual:{RSM_ManualCreatureRegistry.Fingerprint()}";
+                + $"|keywords:{LPS_Config.ExcludedKeywordsFingerprint}";
         }
     }
 }

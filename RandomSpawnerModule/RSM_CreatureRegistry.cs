@@ -126,12 +126,10 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                 }
             }));
 
-            // Wait until completed or timeout reached
-            float startTime = Time.time;
-            while (!completed && Time.time - startTime < timeout)
+            float startTime = Time.realtimeSinceStartup;
+            while (!completed && Time.realtimeSinceStartup - startTime < timeout)
                 yield return null;
 
-            // If the check timed out, treat as non-creature and log a warning
             if (!completed)
             {
                 Plugin.Log.LogWarning($"[RSM_CreatureRegistry] Timeout reached for TechType : {techType} : skipping.");
