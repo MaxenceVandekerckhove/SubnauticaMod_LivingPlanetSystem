@@ -63,6 +63,10 @@ namespace LivingPlanetSystem
         private static ConfigEntry<bool> safeZoneEnabled;
         private static ConfigEntry<float> safeZoneRadius;
 
+        private static ConfigEntry<bool> debugScannerEnabled;
+        public static bool DebugScannerEnabled => debugScannerEnabled.Value;
+
+
         // Config entries — SVM
 
         private static ConfigEntry<bool> sizeVariationEnabled;
@@ -440,6 +444,25 @@ namespace LivingPlanetSystem
                 AddItem(largeWeightSlider);
             }
         }
+        private class LPS_DebugOptions : ModOptions
+        {
+            public LPS_DebugOptions() : base("Living Planet System — 4. Debug")
+            {
+                var toggle = ModToggleOption.Create(
+                    id: "DebugScannerEnabled",
+                    label: "Enable Creature Scanner (F10)",
+                    value: debugScannerEnabled.Value
+                );
+
+                toggle.OnChanged += (_, args) =>
+                {
+                    debugScannerEnabled.Value = args.Value;
+                    Plugin.Log.LogInfo($"[LPS_Config] DebugScannerEnabled updated : {debugScannerEnabled.Value}");
+                };
+
+                AddItem(toggle);
+            }
+        }
 
         // Public API
 
@@ -469,6 +492,12 @@ namespace LivingPlanetSystem
                 defaultValue: 150f,
                 description: "Radius in metres of the spawn-free zone around the player's spawn point. " +
                              "Acceptable range: 50 to 300."
+            );
+            debugScannerEnabled = config.Bind(
+                section: "Debug",
+                key: "DebugScannerEnabled",
+                defaultValue: false,
+                description: "When enabled, pressing F10 in-game will log the TechType and magnitude of the nearest creature."
             );
 
             // SVM - Size Variation
@@ -596,6 +625,7 @@ namespace LivingPlanetSystem
             OptionsPanelHandler.RegisterModOptions(new LPS_CoreOptions());
             OptionsPanelHandler.RegisterModOptions(new SVM_ModOptions());
             OptionsPanelHandler.RegisterModOptions(new REM_ModOptions());
+            OptionsPanelHandler.RegisterModOptions(new LPS_DebugOptions());
 
             InitializeBlacklist();
 
@@ -612,6 +642,7 @@ namespace LivingPlanetSystem
                                $"Small={MigrationSmallEnabled}(w={MigrationSmallWeight}) " +
                                $"Medium={MigrationMediumEnabled}(w={MigrationMediumWeight}) " +
                                $"Large={MigrationLargeEnabled}(w={MigrationLargeWeight})");
+            Plugin.Log.LogInfo($"[LPS_Config] DebugScanner : Enabled={DebugScannerEnabled}");
             Plugin.Log.LogInfo($"[LPS_Config] Blacklist : {cachedKeywords.Length} keywords.");
         }
 

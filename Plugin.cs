@@ -5,6 +5,7 @@ using LivingPlanetSystem.Core;
 using LivingPlanetSystem.RandomEventModule;
 using LivingPlanetSystem.RandomSpawnerModule;
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using UWE;
 
@@ -107,6 +108,13 @@ namespace LivingPlanetSystem
             // Initialize and start the Random Event Module
             REM_EventRegistry.Initialize();
             REM_EventTimer.Start();
+
+            // Attach debug creature scanner
+            if (LPS_Config.DebugScannerEnabled)
+            {
+                gameObject.AddComponent<LPS_CreatureScanner>();
+                Plugin.Log.LogInfo("[Plugin] LPS_CreatureScanner attached.");
+            }
         }
 
         /// Called when RSM_CreatureRegistry finishes scanning all TechTypes.

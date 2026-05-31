@@ -71,6 +71,14 @@
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>J:\Steam\steamapps\common\Subnautica\Subnautica_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>J:\Steam\steamapps\common\Subnautica\Subnautica_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.InputModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>J:\Steam\steamapps\common\Subnautica\Subnautica_Data\Managed\UnityEngine.InputModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.PhysicsModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>J:\Steam\steamapps\common\Subnautica\Subnautica_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
@@ -81,6 +89,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Core\LPS_AudioManager.cs" />
+    <Compile Include="Core\LPS_CreatureScanner.cs" />
     <Compile Include="Core\LPS_SeedManager.cs" />
     <Compile Include="Core\LPS_WorldState.cs" />
     <Compile Include="LPS_Config.cs" />
