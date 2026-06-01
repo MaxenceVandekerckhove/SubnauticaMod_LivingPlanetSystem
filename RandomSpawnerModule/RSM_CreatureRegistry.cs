@@ -66,29 +66,33 @@ namespace LivingPlanetSystem.RandomSpawnerModule
         {
             int pendingTasks = 0;
             int totalChecked = 0;
+            const int MaxParallel = 500;
+            int activeChecks = 0;
 
-            // Launch all checks in parallel — no yield inside the loop
-            // to ensure pendingTasks is fully incremented before any callback fires
             foreach (TechType techType in Enum.GetValues(typeof(TechType)))
             {
                 if (techType == TechType.None)
                     continue;
 
+                while (activeChecks >= MaxParallel)
+                    yield return null;
+
                 totalChecked++;
                 pendingTasks++;
+                activeChecks++;
 
-                CoroutineHost.StartCoroutine(CheckWithTimeout(techType, 5f, isCreature =>
+                CoroutineHost.StartCoroutine(CheckWithTimeout(techType, 15f, isCreature =>
                 {
                     if (isCreature)
                         scannedCreatures.Add(techType);
 
                     pendingTasks--;
+                    activeChecks--;
                 }));
             }
 
             Plugin.Log.LogInfo($"[RSM_CreatureRegistry] {totalChecked} TechTypes queued for checking.");
 
-            // Wait for all parallel checks to finish, logging progress every 5 seconds
             float logTimer = 0f;
             while (pendingTasks > 0)
             {
@@ -107,8 +111,6 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                                $"{scannedCreatures.Count} creatures found out of {totalChecked} TechTypes checked.");
 
             isScanning = false;
-
-            // Notify subscribers — RSM_CreatureFilter will be listening
             OnScanCompleted?.Invoke(new List<TechType>(scannedCreatures));
         }
 
