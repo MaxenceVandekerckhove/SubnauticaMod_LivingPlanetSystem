@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using BepInEx;
+using LivingPlanetSystem.Core;
+using LivingPlanetSystem.RandomSpawnerModule;
 
 namespace LivingPlanetSystem
 {
@@ -94,7 +96,7 @@ namespace LivingPlanetSystem
 
         // Cached blacklist
 
-        private static string[] cachedKeywords;
+        private static List<RSM_CreatureRule> cachedRules;
 
         // Nested ModOptions
 
@@ -644,7 +646,7 @@ namespace LivingPlanetSystem
                                $"Medium={MigrationMediumEnabled}(w={MigrationMediumWeight}) " +
                                $"Large={MigrationLargeEnabled}(w={MigrationLargeWeight})");
             Plugin.Log.LogInfo($"[LPS_Config] DebugScanner : Enabled={DebugScannerEnabled}");
-            Plugin.Log.LogInfo($"[LPS_Config] Blacklist : {cachedKeywords.Length} keywords.");
+            Plugin.Log.LogInfo($"[LPS_Config] Blacklist : {cachedRules.Count} rule(s) loaded.");
         }
 
         // Public properties — RSM
@@ -675,10 +677,10 @@ namespace LivingPlanetSystem
         public static float MigrationLargeWeight => migrationLargeWeight.Value;
 
         // Public properties — Blacklist
-        public static string[] ExcludedKeywords => cachedKeywords;
+        public static List<RSM_CreatureRule> BlacklistRules => cachedRules;
 
-        public static string ExcludedKeywordsFingerprint =>
-            string.Join(",", cachedKeywords.OrderBy(k => k));
+        public static string BlacklistFingerprint =>
+            string.Join("|", cachedRules.Select(r => r.ToString()).OrderBy(s => s));
 
         // Private helpers
 
@@ -687,7 +689,7 @@ namespace LivingPlanetSystem
             if (!File.Exists(BlacklistPath))
                 CreateDefaultBlacklist();
 
-            cachedKeywords = ReadBlacklist();
+            cachedRules = RSM_BlacklistParser.Parse(BlacklistPath);
         }
 
         private static void CreateDefaultBlacklist()
@@ -695,31 +697,103 @@ namespace LivingPlanetSystem
             Directory.CreateDirectory(Path.GetDirectoryName(BlacklistPath));
 
             var lines = new List<string>
-            {
-                "# Living Planet System — Creature Blacklist",
-                "# One keyword per line. Any creature whose name contains a keyword will be excluded from spawning.",
-                "# Lines starting with # are comments and are ignored.",
-                "# Changes take effect after restarting the game or reloading the world.",
-                "#",
-                "# Examples :",
-                "#   warper        → excludes any creature whose name contains 'warper'",
-                "#   leviathan     → excludes any creature whose name contains 'leviathan'",
-                ""
-            };
+    {
+        "# =============================================================================",
+        "# Living Planet System — Creature Blacklist",
+        "# =============================================================================",
+        "#",
+        "# One rule per line. Lines starting with # are comments and are ignored.",
+        "# Changes take effect after restarting the game or reloading the world.",
+        "#",
+        "# -----------------------------------------------------------------------------",
+        "# SYNTAX",
+        "# -----------------------------------------------------------------------------",
+        "#",
+        "# 1. TOTAL EXCLUSION",
+        "#    The creature is excluded from all spawning (Random Spawner Module + Random Event Module).",
+        "#",
+        "#    keyword",
+        "#",
+        "#    Example : Leviathan",
+        "#",
+        "# 2. BIOME BLACKLIST  (EXCLUDE)",
+        "#    The creature spawns everywhere EXCEPT the listed biomes.",
+        "#",
+        "#    keyword : EXCLUDE biome1, biome2, ...",
+        "#",
+        "#    Example : Warper : EXCLUDE LostRiver, SafeShallows",
+        "#",
+        "# 3. BIOME WHITELIST  (ONLY)",
+        "#    The creature spawns ONLY in the listed biomes.",
+        "#",
+        "#    keyword : ONLY biome1, biome2, ...",
+        "#",
+        "#    Example : Stalker : ONLY Dunes, Mountains",
+        "#",
+        "# -----------------------------------------------------------------------------",
+        "# MATCHING RULES",
+        "# -----------------------------------------------------------------------------",
+        "#",
+        "# - Creature names and biome names are matched as PARTIAL KEYWORDS (case-insensitive).",
+        "#",
+        "# - A creature keyword matches any TechType whose name contains that keyword.",
+        "#     Example : \"leviathan\" matches GhostLeviathan, ReaperLeviathan, etc.",
+        "#     Example : \"reaper\"    matches ReaperLeviathan only.",
+        "#",
+        "# - A biome keyword matches any biome whose name contains that keyword.",
+        "#     Example : \"SafeShallows\" matches SafeShallows_OpenWater_0, SafeShallows_CaveFloor, etc.",
+        "#",
+        "# - Total exclusion rules always win, regardless of line order.",
+        "#",
+        "# -----------------------------------------------------------------------------",
+        "# HARD RULES — READ ONLY — DO NOT ATTEMPT TO OVERRIDE",
+        "# -----------------------------------------------------------------------------",
+        "#",
+        "# The following constraints are enforced by the mod regardless of what is",
+        "# written in this file. They cannot be changed here.",
+        "#",
+        "# 1. LARGE CREATURES ARE ALWAYS EXCLUDED FROM RESTRICTED BIOMES.",
+        "#",
+        "#    A creature is considered Large if its collider magnitude is >= 16,",
+        "#    or if its name contains a forced-large keyword (leviathan, seatreader,",
+        "#    tessopatherio).",
+        "#",
+        "#    Restricted biomes are shallow or confined areas :",
+        "#      SafeShallows, CaveFloor, CaveWall, CaveCeiling, CaveSand,",
+        "#      CaveSpecial, CaveEntrance, CaveRecess, CavePlants, IslandCave,",
+        "#      ShellTunnel, OpenShallow, GiantTreeInterior, and any biome",
+        "#      whose name contains \"Cave\".",
+        "#",
+        "#    Large cave systems are explicitly whitelisted and DO allow large",
+        "#    creatures :",
+        "#      JellyShroomCaves, SkeletonCave, LostRiver, TreeCove,",
+        "#      BonesField, GhostTree, ActiveLavaZone, InactiveLavaZone.",
+        "#",
+        "#    Consequence for your rules :",
+        "#      - \"GhostLeviathan : ONLY SafeShallows\" → GhostLeviathan will be",
+        "#        skipped entirely because SafeShallows is restricted and large",
+        "#        creatures are never allowed there.",
+        "#",
+        "# 2. BIOME ELIGIBILITY IS COMPUTED AFTER ALL RULES ARE APPLIED.",
+        "#",
+        "#    If after applying your rule (ONLY or EXCLUDE) and the hard large-creature",
+        "#    restriction, a creature ends up with zero eligible biomes, it is skipped",
+        "#",
+        "# 3. THESE RULES DO NOT REMOVE THE BASE SPAWNS OF THE GAME. LPS IS USED TO RANDOMIZE NEW SPAWNS ONLY.",
+        "#",
+        "# =============================================================================",
+        "# DEFAULT EXCLUSIONS",
+        "# =============================================================================",
+        "# The following entries are the built-in defaults.",
+        "# You can remove or modify them freely.",
+        "# Hard rules above still apply even if you remove entries from this section.",
+        ""
+    };
 
             lines.AddRange(DefaultExcludedKeywords);
 
             File.WriteAllLines(BlacklistPath, lines);
             Plugin.Log.LogInfo($"[LPS_Config] blacklist.txt created with default keywords at : {BlacklistPath}");
-        }
-
-        private static string[] ReadBlacklist()
-        {
-            return File.ReadAllLines(BlacklistPath)
-                .Select(line => line.Trim())
-                .Where(line => !string.IsNullOrEmpty(line) && !line.StartsWith("#"))
-                .Select(line => line.ToLower())
-                .ToArray();
         }
     }
 }

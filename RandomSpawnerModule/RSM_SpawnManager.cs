@@ -160,9 +160,13 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                     bool forceLarge = IsLargeByName(techType);
                     List<BiomeType> eligibleBiomes = RSM_BiomeClassifier.GetEligibleBiomes(magnitude, forceLarge);
 
+                    // Apply blacklist biome rules (EXCLUDE / ONLY) on top of hard large-creature restriction
+                    eligibleBiomes = RSM_BlacklistEvaluator.FilterBiomes(techType, eligibleBiomes, LPS_Config.BlacklistRules);
+
                     if (eligibleBiomes.Count == 0)
                     {
-                        Plugin.Log.LogWarning($"[RSM_SpawnManager] No eligible biomes for {techType} : skipping.");
+                        Plugin.Log.LogWarning($"[RSM_SpawnManager] No eligible biomes for {techType} " +
+                                              $"(after blacklist rules) : skipping.");
                         continue;
                     }
 
@@ -204,7 +208,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 
         // Private helpers
 
-        /// Returns true if the creature name contains any large-by-name keyword.
+        // Returns true if the creature name contains any large-by-name keyword.
         public static bool IsLargeByName(TechType techType)
         {
             string name = techType.ToString().ToLower();
@@ -216,19 +220,19 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             return false;
         }
 
-        /// Returns true if the creature falls in the Large size category.
+        // Returns true if the creature falls in the Large size category.
         public static bool IsLargeCategory(float magnitude)
         {
             return magnitude >= MagnitudeMedium;
         }
 
-        /// Returns true if the creature falls in the Medium size category.
+        // Returns true if the creature falls in the Medium size category.
         private static bool IsMediumCategory(float magnitude)
         {
             return magnitude >= MagnitudeSmall && magnitude < MagnitudeMedium;
         }
 
-        /// Returns the number of biomes to assign to a creature based on its size category.
+        // Returns the number of biomes to assign to a creature based on its size category.
         private static int GetBiomeCount(float magnitude, bool forceLarge, int maxAvailable, float multiplier, Random random)
         {
             int min, max;
@@ -255,7 +259,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             return Math.Max(1, Math.Min(scaled, maxAvailable));
         }
 
-        /// Picks a random subset of biomes using a Fisher-Yates shuffle.
+        // Picks a random subset of biomes using a Fisher-Yates shuffle.
         private static List<BiomeType> PickRandomBiomes(List<BiomeType> eligible, int count, Random random)
         {
             List<BiomeType> shuffled = new List<BiomeType>(eligible);
@@ -271,7 +275,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             return shuffled.GetRange(0, count);
         }
 
-        /// Generates a random spawn probability based on creature size category.
+        // Generates a random spawn probability based on creature size category.
         private static float GenerateProbability(float magnitude, bool forceLarge, float multiplier, Random random)
         {
             float min, max;
@@ -296,8 +300,8 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             return Math.Max(0.0001f, Math.Min(1.0f, baseProbability * multiplier));
         }
 
-        /// Generates a spawn count based on creature size category.
-        /// Large creatures always spawn alone.
+        // Generates a spawn count based on creature size category.
+        // Large creatures always spawn alone.
         private static int GenerateCount(float magnitude, bool forceLarge, Random random)
         {
             if (IsLargeCategory(magnitude) || forceLarge)

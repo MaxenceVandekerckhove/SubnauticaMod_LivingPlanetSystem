@@ -145,7 +145,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 
         // Private helpers
 
-        /// Reads and deserializes the cache file from disk.
+        // Reads and deserializes the cache file from disk.
         private static CacheData ReadCacheFile()
         {
             string json = File.ReadAllText(CacheFilePath);
@@ -163,7 +163,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 
             entries.Sort();
             return string.Join("|", entries)
-                + $"|keywords:{LPS_Config.ExcludedKeywordsFingerprint}";
+                + $"|keywords:{LPS_Config.BlacklistFingerprint}";
         }
     }
 }

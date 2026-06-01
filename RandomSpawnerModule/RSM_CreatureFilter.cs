@@ -46,11 +46,9 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 
             foreach (TechType techType in rawCreatures)
             {
-                string name = techType.ToString().ToLower();
-
-                if (IsNameExcluded(name))
+                if (RSM_BlacklistEvaluator.IsTotallyExcluded(techType, LPS_Config.BlacklistRules))
                 {
-                    Plugin.Log.LogDebug($"[RSM_CreatureFilter] {techType} excluded by name rule.");
+                    Plugin.Log.LogDebug($"[RSM_CreatureFilter] {techType} excluded by blacklist rule.");
                     excludedByName++;
                     continue;
                 }
@@ -58,8 +56,8 @@ namespace LivingPlanetSystem.RandomSpawnerModule
                 namePassedCreatures.Add(techType);
             }
 
-            Plugin.Log.LogInfo($"[RSM_CreatureFilter] Name filter done : " +
-                               $"{namePassedCreatures.Count} remaining after {excludedByName} name exclusions.");
+            Plugin.Log.LogInfo($"[RSM_CreatureFilter] Blacklist filter done : " +
+                               $"{namePassedCreatures.Count} remaining after {excludedByName} total exclusion(s).");
 
             // Step 2 : size measurement and filter
 
@@ -106,7 +104,7 @@ namespace LivingPlanetSystem.RandomSpawnerModule
             // Final summary
             Plugin.Log.LogInfo($"[RSM_CreatureFilter] Filtering complete : " +
                                $"{filteredCreatures.Count} creatures kept, " +
-                               $"{excludedByName} excluded by name, " +
+                               $"{excludedByName} excluded by blacklist, " +
                                $"{excludedBySize} excluded by size, " +
                                $"out of {totalInput} total.");
 
@@ -133,20 +131,9 @@ namespace LivingPlanetSystem.RandomSpawnerModule
 
         // Private helpers
 
-        /// Returns true if the creature name contains any excluded keyword.
-        private static bool IsNameExcluded(string name)
-        {
-            foreach (string keyword in LPS_Config.ExcludedKeywords)
-            {
-                if (name.Contains(keyword))
-                    return true;
-            }
-            return false;
-        }
-
-        /// Computes the combined size of all colliders on a creature instance
-        /// by reading their intrinsic geometry — no activation required.
-        /// Supports BoxCollider, SphereCollider, CapsuleCollider, and MeshCollider.
+        // Computes the combined size of all colliders on a creature instance
+        // by reading their intrinsic geometry — no activation required.
+        // Supports BoxCollider, SphereCollider, CapsuleCollider, and MeshCollider.
         private static Vector3 GetColliderSize(GameObject instance, TechType techType)
         {
             Collider[] colliders = instance.GetComponentsInChildren<Collider>(includeInactive: true);

@@ -111,9 +111,12 @@
     <Compile Include="RandomEventModule\REM_PDAAlert.cs" />
     <Compile Include="RandomSpawnerModule\RMS_BiomeRegistry.cs" />
     <Compile Include="RandomSpawnerModule\RSM_BiomeClassifier.cs" />
+    <Compile Include="RandomSpawnerModule\RSM_BlacklistEvaluator.cs" />
+    <Compile Include="RandomSpawnerModule\RSM_BlacklistParser.cs" />
     <Compile Include="RandomSpawnerModule\RSM_CreatureCache.cs" />
     <Compile Include="RandomSpawnerModule\RSM_CreatureFilter.cs" />
     <Compile Include="RandomSpawnerModule\RSM_CreatureRegistry.cs" />
+    <Compile Include="RandomSpawnerModule\RSM_CreatureRule.cs" />
     <Compile Include="RandomSpawnerModule\RSM_SafeZone.cs" />
     <Compile Include="RandomSpawnerModule\RSM_SafeZoneGuard.cs" />
     <Compile Include="RandomSpawnerModule\RSM_SpawnManager.cs" />
